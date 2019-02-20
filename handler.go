@@ -14,7 +14,17 @@ type responseHandler struct {
 }
 
 func newHandler(expr string, fun RespondFunc) (responseHandler, error) {
-	h := responseHandler{run: fun}
+	safeHandler := func(msg Message) (handlerErr error) {
+		defer func() {
+			if err := recover(); err != nil {
+				handlerErr = errors.Errorf("handler panic: %v", err)
+			}
+		}()
+
+		return fun(msg)
+	}
+
+	h := responseHandler{run: safeHandler}
 
 	var err error
 	h.regex, err = regexp.Compile(expr)
