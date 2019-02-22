@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/fraugster/cli"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -16,25 +17,44 @@ type Bot struct {
 	Logger  *zap.Logger
 	Name    string
 
+	initErr  error // any error when we created a new bot
 	handlers []responseHandler
 }
 
 // TODO: can use options patters to select a logger or adapter
-func New(name string) *Bot {
-	ctx := cli.Context()
-	logger := NewLogger()
-
-	return &Bot{
-		Context: ctx,
-		Adapter: NewCLIAdapter(ctx, name),
-		Brain:   NewInMemoryBrain(),
-		Logger:  logger,
+func New(name string, opts ...Option) *Bot {
+	b := &Bot{
+		Context: cli.Context(),
+		Logger:  NewLogger(),
 		Name:    name,
 	}
+
+	b.Logger.Info("Initializing bot", zap.String("name", name))
+
+	for _, opt := range opts {
+		err := opt(b)
+		if err != nil && b.initErr == nil {
+			b.initErr = err
+		}
+	}
+
+	if b.Adapter == nil {
+		b.Adapter = NewCLIAdapter(b.Context, name)
+	}
+
+	if b.Brain == nil {
+		b.Brain = NewInMemoryBrain()
+	}
+
+	return b
 }
 
-func (b *Bot) Run() {
-	b.Logger.Info("Started bot", zap.String("name", b.Name))
+func (b *Bot) Run() error {
+	if b.initErr != nil {
+		return errors.Wrap(b.initErr, "failed to initialize bot")
+	}
+
+	b.Logger.Info("Bot initialized and ready to operate", zap.String("name", b.Name))
 	for {
 		select {
 		case msg := <-b.Adapter.NextMessage():
@@ -46,7 +66,7 @@ func (b *Bot) Run() {
 			if err != nil {
 				b.Logger.Info("Error while closing adapter", zap.Error(err))
 			}
-			return
+			return nil
 		}
 	}
 }

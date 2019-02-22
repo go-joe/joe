@@ -1,12 +1,14 @@
 package main
 
 import (
+	"log"
 	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
 
 	"github.com/fgrosse/joe"
+	"github.com/fgrosse/joe/redis-brain"
 )
 
 type ExampleBot struct {
@@ -19,7 +21,9 @@ type ExampleBot struct {
 //
 
 func main() {
-	b := &ExampleBot{Bot: joe.New("example")}
+	b := &ExampleBot{Bot: joe.New("example",
+		redis.BrainOption("localhost:6379", redis.WithKey("joe")),
+	)}
 
 	b.Respond("ping", b.Pong)
 	b.Respond("remember (.+) is (.+)", b.Remember)
@@ -27,7 +31,10 @@ func main() {
 	b.Respond(`forget (.+)`, b.Forget)
 	b.Respond(`what do you remember\??`, b.WhatDoYouRemember)
 
-	b.Run()
+	err := b.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (b *ExampleBot) Pong(msg joe.Message) error {
