@@ -22,6 +22,10 @@ type event struct {
 	callbacks []func(event)
 }
 
+type EventEmitter interface {
+	Emit(eventData interface{}, callbacks ...func(event))
+}
+
 type eventHandler func(context.Context, reflect.Value) error
 
 func NewEventProcessor(logger *zap.Logger, handlerTimeout time.Duration) *EventProcessor {
@@ -35,11 +39,8 @@ func NewEventProcessor(logger *zap.Logger, handlerTimeout time.Duration) *EventP
 
 func (p *EventProcessor) RegisterHandler(fun interface{}) {
 	handleErr := func(err error) {
-		firstExternalCaller()
-
-		// TODO: we need to include  more information about which function registration failed
-		// maybe by looking into the stack trace until we find the function that is outside of this package?
-		err = errors.Wrap(err, "Failed to register event handler")
+		caller := firstExternalCaller()
+		err = errors.Wrap(err, caller)
 		p.registrationErrs = append(p.registrationErrs, err)
 	}
 
@@ -73,7 +74,7 @@ func (p *EventProcessor) RegisterHandler(fun interface{}) {
 func (*EventProcessor) checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withContext bool, err error) {
 	numParams := handlerFunc.NumIn()
 	if numParams == 0 || numParams > 2 {
-		err = errors.New("event handler function needs one or two arguments")
+		err = errors.New("event handler needs one or two arguments")
 		return
 	}
 
@@ -81,14 +82,14 @@ func (*EventProcessor) checkHandlerParams(handlerFunc reflect.Type) (evtType ref
 	withContext = numParams == 2
 
 	if evtType.Kind() != reflect.Struct {
-		err = errors.New("last event handler function argument must be a struct")
+		err = errors.New("event handler argument must be a struct")
 		return
 	}
 
 	if withContext {
 		contextInterface := reflect.TypeOf((*context.Context)(nil)).Elem()
 		if !handlerFunc.In(0).Implements(contextInterface) {
-			err = errors.New("event handler function argument 1 is not a context.Context")
+			err = errors.New("event handler has 2 arguments but the first is not a context.Context")
 			return
 		}
 	}
@@ -103,12 +104,12 @@ func (*EventProcessor) checkHandlerReturnValues(handlerFunc reflect.Type) (retur
 	case 1:
 		errorInterface := reflect.TypeOf((*error)(nil)).Elem()
 		if !handlerFunc.Out(0).Implements(errorInterface) {
-			err = errors.New("event handler function return value must implement the error interface")
+			err = errors.New("if the event handler has a return value i must implement the error interface")
 			return
 		}
 		return true, nil
 	default:
-		return false, errors.Errorf("event handler function has more than one return value")
+		return false, errors.Errorf("event handler has more than one return value")
 	}
 }
 

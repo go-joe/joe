@@ -3,9 +3,10 @@ package joe
 import (
 	"fmt"
 	"runtime"
+	"strings"
 )
 
-func firstExternalCaller() {
+func firstExternalCaller() string {
 	const depth = 32
 	var pcs [depth]uintptr
 	n := runtime.Callers(3, pcs[:])
@@ -13,6 +14,10 @@ func firstExternalCaller() {
 
 	frames := runtime.CallersFrames(callers)
 	for frame, more := frames.Next(); more; frame, more = frames.Next() {
-		fmt.Printf("%+v\n", frame)
+		if !strings.HasPrefix(frame.Function, "github.com/go-joe/joe.") {
+			return fmt.Sprintf("%s:%d", frame.File, frame.Line)
+		}
 	}
+
+	return "unknown caller"
 }
