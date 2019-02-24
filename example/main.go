@@ -9,6 +9,7 @@ import (
 
 	"github.com/fgrosse/joe"
 	"github.com/fgrosse/joe/redis-brain"
+	"github.com/fgrosse/joe/slack-adapter"
 )
 
 type ExampleBot struct {
@@ -23,7 +24,7 @@ type ExampleBot struct {
 func main() {
 	b := &ExampleBot{Bot: joe.New("example",
 		redis.Brain("localhost:6379", redis.WithKey("joe")),
-		// slack.Adapter("xoxb-17858453111-558911412836-sOj22lLot5qSLXfVnLD6UKE4"),
+		slack.Adapter("xoxb-17858453111-558911412836-sOj22lLot5qSLXfVnLD6UKE4"),
 	)}
 
 	b.Respond("ping", b.Pong)

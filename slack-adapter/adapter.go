@@ -18,12 +18,11 @@ type Config struct {
 }
 
 type adapter struct {
-	context  context.Context
-	logger   *zap.Logger
-	client   *slack.Client
-	rtm      *slack.RTM
-	userID   string
-	messages chan joe.Message
+	context context.Context
+	logger  *zap.Logger
+	client  *slack.Client
+	rtm     *slack.RTM
+	userID  string
 }
 
 func Adapter(token string, opts ...Option) joe.Option {
@@ -52,10 +51,9 @@ func Adapter(token string, opts ...Option) joe.Option {
 
 func NewAdapter(ctx context.Context, conf Config) (joe.Adapter, error) {
 	a := &adapter{
-		client:   slack.New(conf.Token, slack.OptionDebug(conf.Debug)),
-		context:  ctx,
-		logger:   conf.Logger,
-		messages: make(chan joe.Message, 10),
+		client:  slack.New(conf.Token, slack.OptionDebug(conf.Debug)),
+		context: ctx,
+		logger:  conf.Logger,
 	}
 
 	if a.logger == nil {
@@ -70,11 +68,6 @@ func NewAdapter(ctx context.Context, conf Config) (joe.Adapter, error) {
 	a.userID = resp.UserID
 	a.rtm = a.client.NewRTM()
 
-	// Start message handling in two goroutines. They will be closed when we
-	// disconnect the RTM upon adapter.Close().
-	go a.rtm.ManageConnection()
-	go a.handleSlackEvents()
-
 	a.logger.Info("Connected to slack API",
 		zap.String("url", resp.URL),
 		zap.String("user", resp.User),
@@ -86,7 +79,14 @@ func NewAdapter(ctx context.Context, conf Config) (joe.Adapter, error) {
 	return a, nil
 }
 
-func (a *adapter) handleSlackEvents() {
+func (a *adapter) Register(p *joe.EventProcessor) {
+	// Start message handling in two goroutines. They will be closed when we
+	// disconnect the RTM upon adapter.Close().
+	go a.rtm.ManageConnection()
+	go a.handleSlackEvents(p)
+}
+
+func (a *adapter) handleSlackEvents(p *joe.EventProcessor) {
 	for msg := range a.rtm.IncomingEvents {
 		switch ev := msg.Data.(type) {
 		case *slack.HelloEvent:
@@ -94,7 +94,7 @@ func (a *adapter) handleSlackEvents() {
 
 		case *slack.MessageEvent:
 			a.logger.Debug("Received message", zap.Any("event", ev))
-			a.handleMessageEvent(ev)
+			a.handleMessageEvent(ev, p)
 
 		case *slack.RTMError:
 			a.logger.Error("Slack Real Time Messaging (RTM) error", zap.Any("event", ev))
@@ -110,7 +110,7 @@ func (a *adapter) handleSlackEvents() {
 
 }
 
-func (a *adapter) handleMessageEvent(ev *slack.MessageEvent) {
+func (a *adapter) handleMessageEvent(ev *slack.MessageEvent, p *joe.EventProcessor) {
 	// check if we have a DM, or standard channel post
 	direct := strings.HasPrefix(ev.Msg.Channel, "D")
 	if !direct && !strings.Contains(ev.Msg.Text, "<@"+a.userID+">") {
@@ -119,13 +119,10 @@ func (a *adapter) handleMessageEvent(ev *slack.MessageEvent) {
 	}
 
 	text := strings.TrimSpace(strings.TrimPrefix(ev.Text, "<@"+a.userID+">"))
-	a.messages <- joe.Message{Text: text, ChannelID: ev.Channel}
-}
-
-func (a *adapter) NextMessage() <-chan joe.Message {
-	// Replace C2147483705 with your Channel ID
-	// rtm.SendMessage(rtm.NewOutgoingMessage("Hello world", "C2147483705"))
-	return a.messages
+	p.Emit(joe.ReceiveMessageEvent{
+		Text:      text,
+		ChannelID: ev.Channel,
+	})
 }
 
 func (a *adapter) Send(text, channelID string) error {

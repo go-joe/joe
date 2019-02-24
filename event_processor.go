@@ -11,15 +11,15 @@ import (
 )
 
 type EventProcessor struct {
-	input          chan Event
+	input          chan event
 	logger         *zap.Logger
 	handlerTimeout time.Duration // zero means no timeout
 	handlers       map[reflect.Type][]eventHandler
 }
 
-type Event struct {
+type event struct {
 	Data      interface{}
-	callbacks []func(Event)
+	callbacks []func(event)
 }
 
 type eventHandler func(context.Context, reflect.Value) error
@@ -27,7 +27,7 @@ type eventHandler func(context.Context, reflect.Value) error
 func NewEventProcessor(logger *zap.Logger, handlerTimeout time.Duration) *EventProcessor {
 	return &EventProcessor{
 		logger:         logger.Named("events"),
-		input:          make(chan Event, 10),
+		input:          make(chan event, 10),
 		handlers:       make(map[reflect.Type][]eventHandler),
 		handlerTimeout: handlerTimeout,
 	}
@@ -141,13 +141,13 @@ func (p *EventProcessor) Process(ctx context.Context) {
 			p.handle(ctx, evt)
 
 		case <-ctx.Done():
-			p.handle(ctx, Event{Data: ShutdownEvent{}})
+			p.handle(ctx, event{Data: ShutdownEvent{}})
 			return
 		}
 	}
 }
 
-func (p *EventProcessor) handle(ctx context.Context, evt Event) {
+func (p *EventProcessor) handle(ctx context.Context, evt event) {
 	event := reflect.ValueOf(evt.Data)
 	typ := event.Type()
 	p.logger.Debug("Handling new event",
@@ -192,8 +192,8 @@ func (p *EventProcessor) executeHandler(ctx context.Context, handler eventHandle
 	}
 }
 
-func (p *EventProcessor) Emit(event interface{}, callbacks ...func(Event)) {
+func (p *EventProcessor) Emit(eventData interface{}, callbacks ...func(event)) {
 	go func() {
-		p.input <- Event{Data: event, callbacks: callbacks}
+		p.input <- event{Data: eventData, callbacks: callbacks}
 	}()
 }

@@ -31,7 +31,7 @@ func (a *CLIAdapter) Register(p *EventProcessor) {
 	})
 
 	go func() {
-		callback := func(Event) {
+		callback := func(event) {
 			fmt.Print(a.Prefix)
 		}
 
