@@ -1,44 +1,145 @@
 package joe
 
 import (
+	"context"
+	"reflect"
 	"sync"
+	"time"
 
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
 type Brain struct {
 	mu     sync.RWMutex
 	memory Memory
-	events EventEmitter
 	logger *zap.Logger
+
+	events         chan event
+	handlers       map[reflect.Type][]eventHandler
+	handlerTimeout time.Duration // zero means no timeout
+
+	registrationErrs []error
 }
 
-type Memory interface {
-	Set(key, value string) error
-	Get(key string) (string, bool, error)
-	Delete(key string) (bool, error)
-	Memories() (map[string]string, error)
-	Close() error
+type event struct {
+	Data      interface{}
+	callbacks []func(event)
 }
 
-func NewBrain(m Memory, logger *zap.Logger, events EventEmitter) *Brain {
+type eventHandler func(context.Context, reflect.Value) error
+
+func NewBrain(m Memory, logger *zap.Logger, handlerTimeout time.Duration) *Brain {
 	if logger == nil {
 		logger = zap.NewNop()
 	}
 
 	return &Brain{
-		memory: m,
-		logger: logger,
-		events: events,
+		memory:         m,
+		logger:         logger,
+		events:         make(chan event, 10),
+		handlers:       make(map[reflect.Type][]eventHandler),
+		handlerTimeout: handlerTimeout,
 	}
 }
 
-func NewInMemoryBrain(logger *zap.Logger, events EventEmitter) *Brain {
-	return NewBrain(newInMemory(), logger, events)
+func (b *Brain) RegisterHandler(fun interface{}) {
+	err := b.registerHandler(fun)
+	if err != nil {
+		caller := firstExternalCaller()
+		err = errors.Wrap(err, caller)
+		b.registrationErrs = append(b.registrationErrs, err)
+	}
 }
 
-func newInMemory() *inMemory {
-	return &inMemory{data: map[string]string{}}
+func (b *Brain) registerHandler(fun interface{}) error {
+	handler := reflect.ValueOf(fun)
+	handlerType := handler.Type()
+	if handlerType.Kind() != reflect.Func {
+		return errors.New("event handler is no function")
+	}
+
+	evtType, withContext, err := checkHandlerParams(handlerType)
+	if err != nil {
+		return err
+	}
+
+	returnsErr, err := checkHandlerReturnValues(handlerType)
+	if err != nil {
+		return err
+	}
+
+	b.logger.Debug("Registering new event handler",
+		zap.String("event_type", evtType.Name()),
+	)
+
+	handlerFun := newHandlerFunc(handler, withContext, returnsErr)
+	b.handlers[evtType] = append(b.handlers[evtType], handlerFun)
+	return nil
+}
+
+func (b *Brain) Emit(eventData interface{}, callbacks ...func(event)) {
+	go func() {
+		b.events <- event{Data: eventData, callbacks: callbacks}
+	}()
+}
+
+func (b *Brain) HandleEvents(ctx context.Context) {
+	for {
+		select {
+		case evt := <-b.events:
+			b.handleEvent(ctx, evt)
+
+		case <-ctx.Done():
+			b.handleEvent(ctx, event{Data: ShutdownEvent{}})
+			return
+		}
+	}
+}
+
+func (b *Brain) handleEvent(ctx context.Context, evt event) {
+	event := reflect.ValueOf(evt.Data)
+	typ := event.Type()
+	b.logger.Debug("Handling new event",
+		zap.String("event_type", typ.Name()),
+		zap.Int("handlers", len(b.handlers[typ])),
+	)
+
+	for _, handler := range b.handlers[typ] {
+		err := b.executeEventHandler(ctx, handler, event)
+		if err != nil {
+			b.logger.Error("Event handler failed",
+				// TODO: somehow log the name of the handler
+				zap.Error(err),
+			)
+		}
+	}
+
+	// TODO: callbacks should also get a context
+	// TODO: respect context even if callbacks don't
+	for _, callback := range evt.callbacks {
+		callback(evt)
+	}
+}
+
+func (b *Brain) executeEventHandler(ctx context.Context, handler eventHandler, event reflect.Value) error {
+	if b.handlerTimeout > 0 {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, b.handlerTimeout)
+		defer cancel()
+	}
+
+	done := make(chan error)
+	go func() {
+		done <- handler(ctx, event)
+	}()
+
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (b *Brain) Set(key, value string) error {
@@ -47,7 +148,7 @@ func (b *Brain) Set(key, value string) error {
 	err := b.memory.Set(key, value)
 	b.mu.Unlock()
 
-	b.events.Emit(BrainMemoryEvent{Operation: "set", Key: key, Value: value})
+	b.Emit(BrainMemoryEvent{Operation: "set", Key: key, Value: value})
 	return err
 }
 
@@ -57,7 +158,7 @@ func (b *Brain) Get(key string) (string, bool, error) {
 	value, ok, err := b.memory.Get(key)
 	b.mu.RUnlock()
 
-	b.events.Emit(BrainMemoryEvent{Operation: "get", Key: key, Value: value})
+	b.Emit(BrainMemoryEvent{Operation: "get", Key: key, Value: value})
 	return value, ok, err
 }
 
@@ -67,7 +168,7 @@ func (b *Brain) Delete(key string) (bool, error) {
 	ok, err := b.memory.Delete(key)
 	b.mu.Unlock()
 
-	b.events.Emit(BrainMemoryEvent{Operation: "del", Key: key})
+	b.Emit(BrainMemoryEvent{Operation: "del", Key: key})
 	return ok, err
 }
 
@@ -86,38 +187,4 @@ func (b *Brain) Close() error {
 	b.mu.Unlock()
 
 	return err
-}
-
-type inMemory struct {
-	data map[string]string
-}
-
-func (m *inMemory) Set(key, value string) error {
-	m.data[key] = value
-	return nil
-}
-
-func (m *inMemory) Get(key string) (string, bool, error) {
-	value, ok := m.data[key]
-	return value, ok, nil
-}
-
-func (m *inMemory) Delete(key string) (bool, error) {
-	_, ok := m.data[key]
-	delete(m.data, key)
-	return ok, nil
-}
-
-func (m *inMemory) Memories() (map[string]string, error) {
-	data := make(map[string]string, len(m.data))
-	for k, v := range m.data {
-		data[k] = v
-	}
-
-	return data, nil
-}
-
-func (m *inMemory) Close() error {
-	m.data = map[string]string{}
-	return nil
 }

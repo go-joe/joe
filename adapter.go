@@ -8,7 +8,7 @@ import (
 )
 
 type Adapter interface {
-	Register(*EventProcessor)
+	Register(*Brain)
 	Send(text, channelID string) error
 	Close() error
 }
@@ -25,8 +25,8 @@ func NewCLIAdapter(ctx context.Context, name string) *CLIAdapter {
 	}
 }
 
-func (a *CLIAdapter) Register(p *EventProcessor) {
-	p.RegisterHandler(func(evt InitEvent) {
+func (a *CLIAdapter) Register(b *Brain) {
+	b.RegisterHandler(func(evt InitEvent) {
 		fmt.Print(a.Prefix)
 	})
 
@@ -36,7 +36,7 @@ func (a *CLIAdapter) Register(p *EventProcessor) {
 		}
 
 		for line := range cli.ReadLines(a.ctx) {
-			p.Emit(ReceiveMessageEvent{Text: line}, callback)
+			b.Emit(ReceiveMessageEvent{Text: line}, callback)
 		}
 	}()
 }

@@ -17,7 +17,6 @@ type Bot struct {
 	Name    string
 	Adapter Adapter
 	Brain   *Brain
-	Events  *EventProcessor
 	Logger  *zap.Logger
 
 	initErr error // any error when we created a new bot
@@ -33,15 +32,12 @@ func New(name string, opts ...Option) *Bot {
 	conf.Logger.Info("Initializing bot", zap.String("name", name))
 	conf.ApplyOptions(opts)
 
-	events := NewEventProcessor(conf.Logger, conf.HandlerTimeout)
-
 	return &Bot{
 		Name:    conf.Name,
 		Context: conf.Context,
 		Logger:  conf.Logger,
 		Adapter: conf.Adapter,
-		Brain:   NewBrain(conf.Memory, conf.Logger.Named("brain"), events),
-		Events:  events,
+		Brain:   NewBrain(conf.Memory, conf.Logger.Named("brain"), conf.HandlerTimeout),
 		initErr: multierr.Combine(conf.errs...),
 	}
 }
@@ -51,15 +47,15 @@ func (b *Bot) Run() error {
 		return errors.Wrap(b.initErr, "failed to initialize bot")
 	}
 
-	if len(b.Events.registrationErrs) > 0 {
-		return multierr.Combine(b.Events.registrationErrs...)
+	if len(b.Brain.registrationErrs) > 0 {
+		return multierr.Combine(b.Brain.registrationErrs...)
 	}
 
-	b.Adapter.Register(b.Events)
-	b.Events.Emit(InitEvent{})
+	b.Adapter.Register(b.Brain)
+	b.Brain.Emit(InitEvent{})
 
 	b.Logger.Info("Bot initialized and ready to operate", zap.String("name", b.Name))
-	b.Events.Process(b.Context)
+	b.Brain.HandleEvents(b.Context)
 
 	err := b.Adapter.Close()
 	b.Logger.Info("Bot is shutting down", zap.String("name", b.Name))
@@ -102,7 +98,7 @@ func (b *Bot) RespondRegex(expr string, fun RespondFunc) {
 		return
 	}
 
-	b.Events.RegisterHandler(func(ctx context.Context, evt ReceiveMessageEvent) error {
+	b.Brain.RegisterHandler(func(ctx context.Context, evt ReceiveMessageEvent) error {
 		matches := regex.FindStringSubmatch(evt.Text)
 		if len(matches) == 0 {
 			return nil
