@@ -8,21 +8,35 @@ import (
 	"github.com/fgrosse/joe"
 )
 
-type Brain struct {
+type Config struct {
+	Addr     string
+	Key      string
+	Password string
+	DB       int
+	Logger   *zap.Logger
+}
+
+type brain struct {
 	logger *zap.Logger
 	Client *redis.Client
 	hkey   string
 }
 
-// TODO: is it actually a good idea to sprinkle the options pattern all over this?
-func BrainOption(key string, opts ...Option) joe.Option {
+func Brain(addr string, opts ...Option) joe.Option {
 	return func(b *joe.Bot) error {
-		if b.Logger != nil {
-			// TODO: actually this will overwrite a WithLogger option we got already
-			opts = append(opts, WithLogger(b.Logger.Named("brain")))
+		conf := Config{Addr: addr}
+		for _, opt := range opts {
+			err := opt(&conf)
+			if err != nil {
+				return err
+			}
 		}
 
-		brain, err := NewBrain(key, opts...)
+		if conf.Logger == nil {
+			conf.Logger = b.Logger
+		}
+
+		brain, err := NewBrain(conf)
 		if err != nil {
 			return err
 		}
@@ -32,33 +46,29 @@ func BrainOption(key string, opts ...Option) joe.Option {
 	}
 }
 
-func NewBrain(addr string, opts ...Option) (*Brain, error) {
-	brain := new(Brain)
-
-	for _, opt := range opts {
-		err := opt(brain)
-		if err != nil {
-			return nil, err
-		}
+func NewBrain(conf Config) (joe.Brain, error) {
+	if conf.Logger == nil {
+		conf.Logger = zap.NewNop()
 	}
 
-	if brain.logger == nil {
-		brain.logger = zap.NewNop()
+	if conf.Key == "" {
+		conf.Key = "joe-bot"
 	}
 
-	if brain.hkey == "" {
-		brain.hkey = "joe-bot"
+	brain := &brain{
+		logger: conf.Logger,
+		hkey:   conf.Key,
 	}
 
 	brain.logger.Debug("Connecting to redis memory",
-		zap.String("addr", addr),
+		zap.String("addr", conf.Addr),
 		zap.String("key", brain.hkey),
 	)
 
 	brain.Client = redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     conf.Addr,
+		Password: conf.Password,
+		DB:       conf.DB,
 	})
 
 	_, err := brain.Client.Ping().Result()
@@ -70,13 +80,13 @@ func NewBrain(addr string, opts ...Option) (*Brain, error) {
 	return brain, nil
 }
 
-func (b *Brain) Set(key, value string) error {
+func (b *brain) Set(key, value string) error {
 	b.logger.Debug("Writing data to memory", zap.String("key", key))
 	resp := b.Client.HSet(b.hkey, key, value)
 	return resp.Err()
 }
 
-func (b *Brain) Get(key string) (string, bool, error) {
+func (b *brain) Get(key string) (string, bool, error) {
 	b.logger.Debug("Retrieving data from memory", zap.String("key", key))
 	res, err := b.Client.HGet(b.hkey, key).Result()
 	switch {
@@ -89,16 +99,16 @@ func (b *Brain) Get(key string) (string, bool, error) {
 	}
 }
 
-func (b *Brain) Delete(key string) (bool, error) {
+func (b *brain) Delete(key string) (bool, error) {
 	b.logger.Debug("Deleting data from memory", zap.String("key", key))
 	res, err := b.Client.HDel(b.hkey, key).Result()
 	return res > 0, err
 }
 
-func (b *Brain) Memories() (map[string]string, error) {
+func (b *brain) Memories() (map[string]string, error) {
 	return b.Client.HGetAll(b.hkey).Result()
 }
 
-func (b *Brain) Close() error {
+func (b *brain) Close() error {
 	return b.Client.Close()
 }

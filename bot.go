@@ -3,7 +3,9 @@ package joe
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/fraugster/cli"
 	"github.com/pkg/errors"
@@ -12,22 +14,24 @@ import (
 
 type Bot struct {
 	Context context.Context
+	Name    string
 	Adapter Adapter
 	Brain   Brain
+	Events  *EventProcessor
 	Logger  *zap.Logger
-	Name    string
 
-	initErr  error // any error when we created a new bot
-	handlers []responseHandler
+	initErr error // any error when we created a new bot
 }
 
-// TODO: can use options patters to select a logger or adapter
 func New(name string, opts ...Option) *Bot {
 	b := &Bot{
 		Context: cli.Context(),
 		Logger:  NewLogger(),
 		Name:    name,
 	}
+
+	handlerTimeout := 10 * time.Second // TODO: should be configurable via options just as the logger
+	b.Events = NewEventProcessor(b.Logger, handlerTimeout)
 
 	b.Logger.Info("Initializing bot", zap.String("name", name))
 
@@ -54,45 +58,22 @@ func (b *Bot) Run() error {
 		return errors.Wrap(b.initErr, "failed to initialize bot")
 	}
 
+	b.Adapter.Register(b.Events)
+	b.Events.Emit(InitEvent{})
+
 	b.Logger.Info("Bot initialized and ready to operate", zap.String("name", b.Name))
-	for {
-		select {
-		case msg := <-b.Adapter.NextMessage():
-			b.handleMessage(msg)
+	b.Events.Process(b.Context)
 
-		case <-b.Context.Done():
-			err := b.Adapter.Close()
-			b.Logger.Info("Bot is shutting down", zap.String("name", b.Name))
-			if err != nil {
-				b.Logger.Info("Error while closing adapter", zap.Error(err))
-			}
-			return nil
-		}
+	err := b.Adapter.Close()
+	b.Logger.Info("Bot is shutting down", zap.String("name", b.Name))
+	if err != nil {
+		b.Logger.Info("Error while closing adapter", zap.Error(err))
 	}
+
+	return nil
 }
 
-func (b *Bot) handleMessage(s string) {
-	msg := Message{
-		Context: b.Context,
-		Msg:     s,
-	}
-
-	for _, h := range b.handlers {
-		matches := h.regex.FindStringSubmatch(s)
-		if len(matches) == 0 {
-			continue
-		}
-
-		msg.Matches = matches[1:]
-		err := h.run(msg)
-		if err != nil {
-			b.Logger.Error("Failed to handle message", zap.Error(err))
-		} else {
-			// return after first match
-			return
-		}
-	}
-}
+type RespondFunc func(Message) error
 
 func (b *Bot) Respond(msg string, fun RespondFunc) {
 	expr := "^" + msg + "$"
@@ -118,20 +99,34 @@ func (b *Bot) RespondRegex(expr string, fun RespondFunc) {
 		}
 	}
 
-	h, err := newHandler(expr, fun)
+	regex, err := regexp.Compile(expr)
 	if err != nil {
-		b.Logger.Fatal("Failed to add Response handler", zap.Error(err))
+		b.Logger.Error("Failed to add Response handler", zap.Error(err))
+		return
 	}
 
-	b.handlers = append(b.handlers, h)
+	b.Events.RegisterHandler(func(ctx context.Context, evt ReceiveMessageEvent) error {
+		matches := regex.FindStringSubmatch(evt.Text)
+		if len(matches) == 0 {
+			return nil
+		}
+
+		return fun(Message{
+			Context:   ctx,
+			Text:      evt.Text,
+			ChannelID: evt.ChannelID,
+			Matches:   matches[1:],
+			adapter:   b.Adapter,
+		})
+	})
 }
 
-func (b *Bot) Say(msg string, args ...interface{}) {
+func (b *Bot) Say(channelID, msg string, args ...interface{}) {
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)
 	}
 
-	err := b.Adapter.Send(msg)
+	err := b.Adapter.Send(msg, channelID)
 	if err != nil {
 		b.Logger.Error("Failed to send message", zap.Error(err))
 	}

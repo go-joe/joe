@@ -15,14 +15,15 @@ type ExampleBot struct {
 	*joe.Bot
 }
 
-// IDEAS:
+// IDEA:
 // - generate code based on godoc of functions?
 // - lint code (e.g. using match indices that cannot exist
-//
+// - collect all settings in a concrete type and implement reading from env or file there (viper?)
 
 func main() {
 	b := &ExampleBot{Bot: joe.New("example",
-		redis.BrainOption("localhost:6379", redis.WithKey("joe")),
+		redis.Brain("localhost:6379", redis.WithKey("joe")),
+		// slack.Adapter("xoxb-17858453111-558911412836-sOj22lLot5qSLXfVnLD6UKE4"),
 	)}
 
 	b.Respond("ping", b.Pong)
@@ -38,7 +39,7 @@ func main() {
 }
 
 func (b *ExampleBot) Pong(msg joe.Message) error {
-	b.Say("PONG")
+	msg.Respond("PONG")
 	return nil
 }
 
@@ -47,7 +48,7 @@ func (b *ExampleBot) Pong(msg joe.Message) error {
 func (b *ExampleBot) Remember(msg joe.Message) error {
 	key, value := msg.Matches[0], msg.Matches[1]
 	key = strings.TrimSpace(key)
-	b.Say("OK, I'll remember %s is %s", key, value)
+	msg.Respond("OK, I'll remember %s is %s", key, value)
 	return b.Brain.Set(key, value)
 }
 
@@ -59,9 +60,9 @@ func (b *ExampleBot) WhatIs(msg joe.Message) error {
 	}
 
 	if ok {
-		b.Say("%s is %s", key, value)
+		msg.Respond("%s is %s", key, value)
 	} else {
-		b.Say("I do not remember %q", key)
+		msg.Respond("I do not remember %q", key)
 	}
 
 	return nil
@@ -76,9 +77,9 @@ func (b *ExampleBot) Forget(msg joe.Message) error {
 	}
 
 	if !ok {
-		b.Say("I do not remember %q", key)
+		msg.Respond("I do not remember %q", key)
 	} else {
-		b.Say("I've forgotten %s is %s.", key, value)
+		msg.Respond("I've forgotten %s is %s.", key, value)
 	}
 
 	return nil
@@ -92,12 +93,12 @@ func (b *ExampleBot) WhatDoYouRemember(msg joe.Message) error {
 
 	switch len(data) {
 	case 0:
-		b.Say("I do not remember anything")
+		msg.Respond("I do not remember anything")
 		return nil
 	case 1:
-		b.Say("I have only a single memory:")
+		msg.Respond("I have only a single memory:")
 	default:
-		b.Say("I have %d memories:", len(data))
+		msg.Respond("I have %d memories:", len(data))
 	}
 
 	keys := make([]string, 0, len(data))
@@ -108,7 +109,7 @@ func (b *ExampleBot) WhatDoYouRemember(msg joe.Message) error {
 	sort.Strings(keys)
 	for _, key := range keys {
 		value := data[key]
-		b.Say("%s is %s", key, value)
+		msg.Respond("%s is %s", key, value)
 	}
 
 	return nil
