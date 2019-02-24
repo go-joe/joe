@@ -7,14 +7,14 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 type EventProcessor struct {
-	input          chan event
-	logger         *zap.Logger
-	handlerTimeout time.Duration // zero means no timeout
-	handlers       map[reflect.Type][]eventHandler
+	input            chan event
+	logger           *zap.Logger
+	handlerTimeout   time.Duration // zero means no timeout
+	handlers         map[reflect.Type][]eventHandler
+	registrationErrs []error
 }
 
 type event struct {
@@ -34,26 +34,31 @@ func NewEventProcessor(logger *zap.Logger, handlerTimeout time.Duration) *EventP
 }
 
 func (p *EventProcessor) RegisterHandler(fun interface{}) {
-	logErr := func(err error, fields ...zapcore.Field) {
-		p.logger.Error("Failed to register handler: "+err.Error(), fields...)
+	handleErr := func(err error) {
+		firstExternalCaller()
+
+		// TODO: we need to include  more information about which function registration failed
+		// maybe by looking into the stack trace until we find the function that is outside of this package?
+		err = errors.Wrap(err, "Failed to register event handler")
+		p.registrationErrs = append(p.registrationErrs, err)
 	}
 
 	handler := reflect.ValueOf(fun)
 	handlerType := handler.Type()
 	if handlerType.Kind() != reflect.Func {
-		logErr(errors.New("event handler is no function"))
+		handleErr(errors.New("event handler is no function"))
 		return
 	}
 
 	evtType, withContext, err := p.checkHandlerParams(handlerType)
 	if err != nil {
-		logErr(err)
+		handleErr(err)
 		return
 	}
 
 	returnsErr, err := p.checkHandlerReturnValues(handlerType)
 	if err != nil {
-		logErr(err)
+		handleErr(err)
 		return
 	}
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/fraugster/cli"
 	"github.com/pkg/errors"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -56,6 +57,10 @@ func New(name string, opts ...Option) *Bot {
 func (b *Bot) Run() error {
 	if b.initErr != nil {
 		return errors.Wrap(b.initErr, "failed to initialize bot")
+	}
+
+	if len(b.Events.registrationErrs) > 0 {
+		return multierr.Combine(b.Events.registrationErrs...)
 	}
 
 	b.Adapter.Register(b.Events)
@@ -112,21 +117,21 @@ func (b *Bot) RespondRegex(expr string, fun RespondFunc) {
 		}
 
 		return fun(Message{
-			Context:   ctx,
-			Text:      evt.Text,
-			ChannelID: evt.ChannelID,
-			Matches:   matches[1:],
-			adapter:   b.Adapter,
+			Context: ctx,
+			Text:    evt.Text,
+			Channel: evt.Channel,
+			Matches: matches[1:],
+			adapter: b.Adapter,
 		})
 	})
 }
 
-func (b *Bot) Say(channelID, msg string, args ...interface{}) {
+func (b *Bot) Say(channel, msg string, args ...interface{}) {
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)
 	}
 
-	err := b.Adapter.Send(msg, channelID)
+	err := b.Adapter.Send(msg, channel)
 	if err != nil {
 		b.Logger.Error("Failed to send message", zap.Error(err))
 	}

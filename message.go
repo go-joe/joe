@@ -6,10 +6,10 @@ import (
 )
 
 type Message struct {
-	Context   context.Context
-	Text      string
-	ChannelID string
-	Matches   []string
+	Context context.Context
+	Text    string
+	Channel string
+	Matches []string
 
 	adapter Adapter
 }
@@ -23,5 +23,5 @@ func (msg *Message) RespondE(text string, args ...interface{}) error {
 		text = fmt.Sprintf(text, args...)
 	}
 
-	return msg.adapter.Send(text, msg.ChannelID)
+	return msg.adapter.Send(text, msg.Channel)
 }
