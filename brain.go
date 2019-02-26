@@ -10,25 +10,41 @@ import (
 	"go.uber.org/zap"
 )
 
+// The Brain contains the core logic of a Bot by implementing an event handler
+// that dispatches events to all registered event handlers. Additionally the
+// Brain is directly connected to the Memory of the bot to manage concurrent
+// access as well as to emit the BrainMemoryEvent if memory is created, edited
+// or deleted on the brain.
 type Brain struct {
-	mu     sync.RWMutex
-	memory Memory
 	logger *zap.Logger
+
+	mu     sync.RWMutex // mu protects concurrent access to the Memory
+	memory Memory
 
 	events         chan event
 	handlers       map[reflect.Type][]eventHandler
 	handlerTimeout time.Duration // zero means no timeout
 
-	registrationErrs []error
+	registrationErrs []error // any errors that occurred during setup (e.g. in Bot.RegisterHandler)
 }
 
+// An event represents a concrete event type and optional callbacks that are
+// triggered when the event was processed by any handler.
 type event struct {
-	Data      interface{}
+	data      interface{}
 	callbacks []func(event)
 }
 
+// An event handler is a function that takes a context and the reflected value
+// of a concrete event type.
 type eventHandler func(context.Context, reflect.Value) error
 
+// NewBrain creates a new robot Brain. By default the Brain will use a Memory
+// implementation that stores all keys and values directly in memory. You can
+// change the memory implementation afterwards by simply assigning to
+// Brain.Memory. If the passed logger is nil it will fallback to the
+// zap.NewNop() logger. By default no timeout will be enforced on the event
+// handlers.
 func NewBrain(logger *zap.Logger) *Brain {
 	if logger == nil {
 		logger = zap.NewNop()
@@ -42,6 +58,32 @@ func NewBrain(logger *zap.Logger) *Brain {
 	}
 }
 
+// RegisterHandler registers a function to be executed when a specific event is
+// fired. The function signature must comply with the following rules or the bot
+// that uses this Brain will return an error on its next Bot.Run() call:
+//
+// Allowed function signatures:
+//
+//   // MyCustomEventStruct must be any struct but not a pointer to a struct.
+//   func(MyCustomEventStruct)
+//
+//   // You can optionally accept a context as the first argument. It will
+//   // receive the correct context of the Bot
+//   func(context.Context, MyCustomEventStruct)
+//
+//   // You can optionally return a single error value. Returning any other type
+//   // or returning more than one value will lead to an error. If the handler
+//   // returns an error it will be logged.
+//   func(MyCustomEventStruct) error
+//
+// The event that will be dispatched to the passed handler function corresponds
+// directly to the accepted function argument. For instance if you want to emit
+// and receive a custom event you can implement it like this:
+//
+//     type CustomEvent struct {}
+//
+//     b := NewBrain(nil)
+//     b.RegisterHandler(func(
 func (b *Brain) RegisterHandler(fun interface{}) {
 	err := b.registerHandler(fun)
 	if err != nil {
@@ -77,12 +119,17 @@ func (b *Brain) registerHandler(fun interface{}) error {
 	return nil
 }
 
+// Emit sends the first argument as event to the brain. Any handler that
 func (b *Brain) Emit(eventData interface{}, callbacks ...func(event)) {
 	go func() {
-		b.events <- event{Data: eventData, callbacks: callbacks}
+		b.events <- event{data: eventData, callbacks: callbacks}
 	}()
 }
 
+// HandleEvents starts the event handler loop of the Brain. This function blocks
+// until the passed context is cancelled. If no handler timeout was configured
+// the brain might block indefinitely even if the context is canceled but an
+// event handler or callback is not respecting the context.
 func (b *Brain) HandleEvents(ctx context.Context) {
 	for {
 		select {
@@ -90,14 +137,17 @@ func (b *Brain) HandleEvents(ctx context.Context) {
 			b.handleEvent(ctx, evt)
 
 		case <-ctx.Done():
-			b.handleEvent(ctx, event{Data: ShutdownEvent{}})
+			b.handleEvent(ctx, event{data: ShutdownEvent{}})
 			return
 		}
 	}
 }
 
+// handleEvent receives an event and determines which handler it must be
+// dispatched to using the reflect API. Additionally the function enforces any
+// event handler timeouts (if configured) and runs any event callbacks.
 func (b *Brain) handleEvent(ctx context.Context, evt event) {
-	event := reflect.ValueOf(evt.Data)
+	event := reflect.ValueOf(evt.data)
 	typ := event.Type()
 	b.logger.Debug("Handling new event",
 		zap.Stringer("event_type", typ),
@@ -141,6 +191,8 @@ func (b *Brain) executeEventHandler(ctx context.Context, handler eventHandler, e
 	}
 }
 
+// Set is a wrapper around the Brains Memory.Set function to allow concurrent
+// access and emit the corresponding BrainMemoryEvent.
 func (b *Brain) Set(key, value string) error {
 	b.mu.Lock()
 	b.logger.Debug("Writing data to memory", zap.String("key", key))
@@ -151,6 +203,8 @@ func (b *Brain) Set(key, value string) error {
 	return err
 }
 
+// Get is a wrapper around the Brains Memory.Get function to allow concurrent
+// access and emit the corresponding BrainMemoryEvent.
 func (b *Brain) Get(key string) (string, bool, error) {
 	b.mu.RLock()
 	b.logger.Debug("Retrieving data from memory", zap.String("key", key))
@@ -161,6 +215,8 @@ func (b *Brain) Get(key string) (string, bool, error) {
 	return value, ok, err
 }
 
+// Delete is a wrapper around the Brains Memory.Delete function to allow
+// concurrent access and emit the corresponding BrainMemoryEvent.
 func (b *Brain) Delete(key string) (bool, error) {
 	b.mu.Lock()
 	b.logger.Debug("Deleting data from memory", zap.String("key", key))
@@ -171,6 +227,8 @@ func (b *Brain) Delete(key string) (bool, error) {
 	return ok, err
 }
 
+// Memories is a wrapper around the Brains Memory.Memories function to allow
+// concurrent access.
 func (b *Brain) Memories() (map[string]string, error) {
 	b.mu.RLock()
 	data, err := b.memory.Memories()
@@ -179,6 +237,8 @@ func (b *Brain) Memories() (map[string]string, error) {
 	return data, err
 }
 
+// Close is a wrapper around the Brains Memory.Close function to allow
+// concurrent access.
 func (b *Brain) Close() error {
 	b.mu.Lock()
 	b.logger.Debug("Shutting down brain")
