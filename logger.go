@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// TODO: should not be exported I think
 func NewLogger() *zap.Logger {
 	cfg := zap.Config{
 		Level:       zap.NewAtomicLevelAt(zap.DebugLevel),

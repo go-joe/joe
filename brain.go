@@ -29,17 +29,16 @@ type event struct {
 
 type eventHandler func(context.Context, reflect.Value) error
 
-func NewBrain(m Memory, logger *zap.Logger, handlerTimeout time.Duration) *Brain {
+func NewBrain(logger *zap.Logger) *Brain {
 	if logger == nil {
 		logger = zap.NewNop()
 	}
 
 	return &Brain{
-		memory:         m,
-		logger:         logger,
-		events:         make(chan event, 10),
-		handlers:       make(map[reflect.Type][]eventHandler),
-		handlerTimeout: handlerTimeout,
+		logger:   logger,
+		memory:   newInMemory(),
+		events:   make(chan event, 10),
+		handlers: make(map[reflect.Type][]eventHandler),
 	}
 }
 
@@ -70,7 +69,7 @@ func (b *Brain) registerHandler(fun interface{}) error {
 	}
 
 	b.logger.Debug("Registering new event handler",
-		zap.String("event_type", evtType.Name()),
+		zap.Stringer("event_type", evtType),
 	)
 
 	handlerFun := newHandlerFunc(handler, withContext, returnsErr)
@@ -101,7 +100,7 @@ func (b *Brain) handleEvent(ctx context.Context, evt event) {
 	event := reflect.ValueOf(evt.Data)
 	typ := event.Type()
 	b.logger.Debug("Handling new event",
-		zap.String("event_type", typ.Name()),
+		zap.Stringer("event_type", typ),
 		zap.Int("handlers", len(b.handlers[typ])),
 	)
 

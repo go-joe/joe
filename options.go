@@ -10,57 +10,43 @@ import (
 type Config struct {
 	Context        context.Context
 	Name           string
-	Logger         *zap.Logger
-	Adapter        Adapter
-	Memory         Memory
 	HandlerTimeout time.Duration
 
-	errs []error
+	logger  *zap.Logger
+	brain *Brain
+	adapter Adapter
+	errs    []error
 }
 
-func (conf *Config) ApplyOptions(opts []Option) {
-	for _, opt := range opts {
-		err := opt(conf)
-		if err != nil {
-			conf.errs = append(conf.errs, err)
-		}
-	}
-
-	if conf.Adapter == nil {
-		conf.Adapter = NewCLIAdapter(conf.Context, conf.Name)
-	}
-
-	if conf.Memory == nil {
-		conf.Memory = newInMemory()
-	}
+type EventEmitter interface {
+	Emit(event interface{}, callbacks ...func(event))
 }
 
-type Option func(*Config) error
+func (c *Config) Logger(name string) *zap.Logger {
+	return c.logger.Named(name)
+}
+
+func (c *Config) SetMemory(mem Memory) {
+	c.brain.memory = mem
+}
+
+func (c *Config) SetAdapter(a Adapter) {
+	c.adapter = a
+}
+
+func (c *Config) RegisterHandler(fun interface{}) {
+	c.brain.RegisterHandler(fun)
+}
+
+func (c *Config) EventEmitter() EventEmitter {
+	return c.brain
+}
+
+type Option Module
 
 func WithContext(ctx context.Context) Option {
 	return func(conf *Config) error {
 		conf.Context = ctx
-		return nil
-	}
-}
-
-func WithLogger(logger *zap.Logger) Option {
-	return func(conf *Config) error {
-		conf.Logger = logger
-		return nil
-	}
-}
-
-func WithAdapter(adapter Adapter) Option {
-	return func(conf *Config) error {
-		conf.Adapter = adapter
-		return nil
-	}
-}
-
-func WithMemory(memory Memory) Option {
-	return func(conf *Config) error {
-		conf.Memory = memory
 		return nil
 	}
 }

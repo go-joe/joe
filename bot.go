@@ -22,22 +22,38 @@ type Bot struct {
 	initErr error // any error when we created a new bot
 }
 
-func New(name string, opts ...Option) *Bot {
-	conf := Config{
-		Context: cli.Context(),
-		Logger:  NewLogger(),
-		Name:    name,
+type Module func(*Config) error
+
+func New(name string, modules ...Module) *Bot {
+	ctx := cli.Context()
+	logger := NewLogger()
+	brain := NewBrain(logger.Named("brain"))
+
+	conf := &Config{
+		Context:        ctx,
+		Name:           name,
+		HandlerTimeout: brain.handlerTimeout,
+		logger:         logger,
+		adapter:        NewCLIAdapter(ctx, name),
+		brain:          brain,
 	}
 
-	conf.Logger.Info("Initializing bot", zap.String("name", name))
-	conf.ApplyOptions(opts)
+	conf.logger.Info("Initializing bot", zap.String("name", name))
+	for _, mod := range modules {
+		err := mod(conf)
+		if err != nil {
+			conf.errs = append(conf.errs, err)
+		}
+	}
 
+	// apply all configuration options
+	brain.handlerTimeout = conf.HandlerTimeout
 	return &Bot{
 		Name:    conf.Name,
 		Context: conf.Context,
-		Logger:  conf.Logger,
-		Adapter: conf.Adapter,
-		Brain:   NewBrain(conf.Memory, conf.Logger.Named("brain"), conf.HandlerTimeout),
+		Logger:  conf.logger,
+		Adapter: conf.adapter,
+		Brain:   brain,
 		initErr: multierr.Combine(conf.errs...),
 	}
 }
