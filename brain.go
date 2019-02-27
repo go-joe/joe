@@ -131,6 +131,8 @@ func (b *Brain) Emit(eventData interface{}, callbacks ...func(event)) {
 // the brain might block indefinitely even if the context is canceled but an
 // event handler or callback is not respecting the context.
 func (b *Brain) HandleEvents(ctx context.Context) {
+	b.handleEvent(ctx, event{data: InitEvent{}})
+
 	for {
 		select {
 		case evt := <-b.events:

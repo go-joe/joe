@@ -26,7 +26,7 @@ type Module func(*Config) error
 
 func New(name string, modules ...Module) *Bot {
 	ctx := cli.Context()
-	logger := NewLogger()
+	logger := newLogger()
 	brain := NewBrain(logger.Named("brain"))
 
 	conf := &Config{
@@ -68,7 +68,6 @@ func (b *Bot) Run() error {
 	}
 
 	b.Adapter.Register(b.Brain)
-	b.Brain.Emit(InitEvent{})
 
 	b.Logger.Info("Bot initialized and ready to operate", zap.String("name", b.Name))
 	b.Brain.HandleEvents(b.Context)

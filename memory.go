@@ -1,5 +1,9 @@
 package joe
 
+// The Memory interface allows the robot Brain to persist data as key-value pairs.
+// The default implementation of the Memory is to store all keys and values in
+// a map (i.e. in-memory). Other implementations typically offer actual long term
+// persistence into a file or to redis.
 type Memory interface {
 	Set(key, value string) error
 	Get(key string) (string, bool, error)

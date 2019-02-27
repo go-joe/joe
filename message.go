@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// A Message is automatically created from a ReceiveMessageEvent
 type Message struct {
 	Context context.Context
 	Text    string
