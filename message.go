@@ -5,12 +5,14 @@ import (
 	"fmt"
 )
 
-// A Message is automatically created from a ReceiveMessageEvent
+// A Message is automatically created from a ReceiveMessageEvent and then passed
+// to the RespondFunc that was passed to Bot.Respond(…) or Bot.RespondRegex(…)
+// when the message matches the regular expression of the handler.
 type Message struct {
 	Context context.Context
 	Text    string
 	Channel string
-	Matches []string
+	Matches []string // contains all sub matches of the regex
 
 	adapter Adapter
 }
