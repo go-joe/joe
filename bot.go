@@ -34,7 +34,7 @@ func New(name string, modules ...Module) *Bot {
 		Name:           name,
 		HandlerTimeout: brain.handlerTimeout,
 		logger:         logger,
-		adapter:        NewCLIAdapter(ctx, name),
+		adapter:        NewCLIAdapter(ctx, name, logger),
 		brain:          brain,
 	}
 

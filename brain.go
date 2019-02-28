@@ -121,9 +121,11 @@ func (b *Brain) registerHandler(fun interface{}) error {
 
 // Emit sends the first argument as event to the brain. Any handler that
 func (b *Brain) Emit(eventData interface{}, callbacks ...func(event)) {
-	go func() {
-		b.events <- event{data: eventData, callbacks: callbacks}
-	}()
+	go b.emit(eventData, callbacks...)
+}
+
+func (b *Brain) emit(eventData interface{}, callbacks ...func(event)) {
+	b.events <- event{data: eventData, callbacks: callbacks}
 }
 
 // HandleEvents starts the event handler loop of the Brain. This function blocks
