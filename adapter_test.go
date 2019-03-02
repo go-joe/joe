@@ -57,8 +57,12 @@ func TestCLIAdapter_Send(t *testing.T) {
 }
 
 func TestCLIAdapter_Close(t *testing.T) {
-	t.Skip()
+	input := new(bytes.Buffer)
 	a, output := cliTestAdapter(t)
+	a.Input = ioutil.NopCloser(input)
+	brain := NewBrain(a.Logger)
+	brain.connectAdapter(a)
+
 	err := a.Close()
 	require.NoError(t, err)
 	assert.Equal(t, "\n", output.String())

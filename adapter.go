@@ -134,6 +134,8 @@ func (a *CLIAdapter) Send(text, channel string) error {
 	return a.print(text + "\n")
 }
 
+// Close makes the CLIAdapter stop emitting any new events or printing any output.
+// Calling this function more than once will result in an error.
 func (a *CLIAdapter) Close() error {
 	if a.closing == nil {
 		return errors.Errorf("already closed")
