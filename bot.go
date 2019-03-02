@@ -34,7 +34,7 @@ func New(name string, modules ...Module) *Bot {
 		Name:           name,
 		HandlerTimeout: brain.handlerTimeout,
 		logger:         logger,
-		adapter:        NewCLIAdapter(ctx, name, logger),
+		adapter:        NewCLIAdapter(name, logger),
 		brain:          brain,
 	}
 
@@ -67,7 +67,7 @@ func (b *Bot) Run() error {
 		return multierr.Combine(b.Brain.registrationErrs...)
 	}
 
-	b.Adapter.Register(b.Brain)
+	b.Brain.connectAdapter(b.Adapter)
 
 	b.Logger.Info("Bot initialized and ready to operate", zap.String("name", b.Name))
 	b.Brain.HandleEvents(b.Context)

@@ -39,6 +39,19 @@ type event struct {
 // of a concrete event type.
 type eventHandler func(context.Context, reflect.Value) error
 
+type Events interface {
+	Channel() chan<- event
+	RegisterHandler(function interface{})
+}
+
+type brainEvents struct {
+	*Brain
+}
+
+func (a brainEvents) Channel() chan<- event {
+	return a.events
+}
+
 // NewBrain creates a new robot Brain. By default the Brain will use a Memory
 // implementation that stores all keys and values directly in memory. You can
 // change the memory implementation afterwards by simply assigning to
@@ -117,6 +130,10 @@ func (b *Brain) registerHandler(fun interface{}) error {
 	handlerFun := newHandlerFunc(handler, withContext, returnsErr)
 	b.handlers[evtType] = append(b.handlers[evtType], handlerFun)
 	return nil
+}
+
+func (b *Brain) connectAdapter(a Adapter) {
+	a.Register(brainEvents{b})
 }
 
 // Emit sends the first argument as event to the brain. Any handler that
