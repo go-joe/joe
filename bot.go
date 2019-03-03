@@ -75,10 +75,8 @@ func cliContext() context.Context {
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 	go func() {
-		select {
-		case <-sig:
-			cancel()
-		}
+		<-sig
+		cancel()
 	}()
 
 	return ctx
