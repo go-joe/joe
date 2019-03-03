@@ -51,8 +51,8 @@ type Module func(*Config) error
 //
 // Example:
 //   b := joe.New("example",
-// 	     redis.Memory("localhost:6379"),
-// 	     slack.Adapter("xoxb-58942365423-…"),
+//       redis.Memory("localhost:6379"),
+//       slack.Adapter("xoxb-58942365423-…"),
 //       joehttp.Server(":8080"),
 //       joe.WithHandlerTimeout(time.Second),
 //   )
