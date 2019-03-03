@@ -13,7 +13,7 @@ type Config struct {
 	HandlerTimeout time.Duration
 
 	logger  *zap.Logger
-	brain *Brain
+	brain   *Brain
 	adapter Adapter
 	errs    []error
 }
@@ -42,16 +42,14 @@ func (c *Config) EventEmitter() EventEmitter {
 	return c.brain
 }
 
-type Option Module
-
-func WithContext(ctx context.Context) Option {
+func WithContext(ctx context.Context) Module {
 	return func(conf *Config) error {
 		conf.Context = ctx
 		return nil
 	}
 }
 
-func WithHandlerTimeout(timeout time.Duration) Option {
+func WithHandlerTimeout(timeout time.Duration) Module {
 	return func(conf *Config) error {
 		conf.HandlerTimeout = timeout
 		return nil

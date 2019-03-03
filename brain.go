@@ -39,16 +39,16 @@ type event struct {
 // of a concrete event type.
 type eventHandler func(context.Context, reflect.Value) error
 
-type Events interface {
+type EventRegistry interface {
 	Channel() chan<- event
 	RegisterHandler(function interface{})
 }
 
-type brainEvents struct {
+type brainRegistry struct {
 	*Brain
 }
 
-func (a brainEvents) Channel() chan<- event {
+func (a brainRegistry) Channel() chan<- event {
 	return a.events
 }
 
@@ -133,16 +133,15 @@ func (b *Brain) registerHandler(fun interface{}) error {
 }
 
 func (b *Brain) connectAdapter(a Adapter) {
-	a.Register(brainEvents{b})
+	a.Register(brainRegistry{b})
 }
 
-// Emit sends the first argument as event to the brain. Any handler that
+// Emit sends the first argument as event to the brain from where it is
+// dispatched to all registered handlers.
 func (b *Brain) Emit(eventData interface{}, callbacks ...func(event)) {
-	go b.emit(eventData, callbacks...)
-}
-
-func (b *Brain) emit(eventData interface{}, callbacks ...func(event)) {
-	b.events <- event{data: eventData, callbacks: callbacks}
+	go func() {
+		b.events <- event{data: eventData, callbacks: callbacks}
+	}()
 }
 
 // HandleEvents starts the event handler loop of the Brain. This function blocks

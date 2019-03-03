@@ -19,7 +19,7 @@ import (
 // Joe provides a default CLIAdapter implementation which connects the bot with
 // the local shell to receive messages from stdin and print messages to stdout.
 type Adapter interface {
-	Register(Events)
+	Register(EventRegistry)
 	Send(text, channel string) error
 	Close() error
 }
@@ -52,7 +52,7 @@ func NewCLIAdapter(name string, logger *zap.Logger) *CLIAdapter {
 // ReceiveMessageEvent for each of them. Additionally the adapter hooks into the
 // InitEvent to print a nice prefix to stdout to show to the user it is ready to
 // accept input.
-func (a *CLIAdapter) Register(events Events) {
+func (a *CLIAdapter) Register(events EventRegistry) {
 	events.RegisterHandler(func(evt InitEvent) {
 		_ = a.print(a.Prefix)
 	})

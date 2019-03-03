@@ -6,13 +6,13 @@ import (
 )
 
 // A Message is automatically created from a ReceiveMessageEvent and then passed
-// to the RespondFunc that was passed to Bot.Respond(…) or Bot.RespondRegex(…)
+// to the RespondFunc that was registered via Bot.Respond(…) or Bot.RespondRegex(…)
 // when the message matches the regular expression of the handler.
 type Message struct {
 	Context context.Context
 	Text    string
 	Channel string
-	Matches []string // contains all sub matches of the regex
+	Matches []string // contains all sub matches of the regular expression that matched the Text
 
 	adapter Adapter
 }
