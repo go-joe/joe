@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: test shutdown event context is not already canceled → Brain test
 // TODO: test Bot.Respond
 // TODO: test Bot.RespondRegex
 // TODO: test Bot.Say
