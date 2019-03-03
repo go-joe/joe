@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,7 +47,14 @@ func TestCLIAdapter_Register(t *testing.T) {
 	assert.Equal(t, "World", msg2.Text)
 
 	assert.NoError(t, a.Close())
-	assert.Contains(t, output.String(), "test > test >") // TODO
+
+	expectedOutput := strings.Join([]string{
+		"test > ", // Hello
+		"test > ", // World
+		"test > ", // <ctrl>+c
+		"\n",
+	}, "")
+	assert.Equal(t, expectedOutput, output.String())
 }
 
 func TestCLIAdapter_Send(t *testing.T) {
