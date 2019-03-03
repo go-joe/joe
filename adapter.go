@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// An adapter connects the bot with the chat by enabling it to receive and send
+// An Adapter connects the bot with the chat by enabling it to receive and send
 // messages. Additionally advanced adapters can emit more events than just the
 // ReceiveMessageEvent (e.g. the slack adapter also emits the UserTypingEvent).
 // All adapter events must be setup in the Register function of the Adapter.

@@ -154,7 +154,7 @@ func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
 }
 
 // HandleEvents starts the event handler loop of the Brain. This function blocks
-// until the passed context is cancelled. If no handler timeout was configured
+// until the passed context is canceled. If no handler timeout was configured
 // the brain might block indefinitely even if the context is canceled but an
 // event handler or callback is not respecting the context.
 func (b *Brain) HandleEvents(ctx context.Context) {

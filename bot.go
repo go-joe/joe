@@ -69,7 +69,7 @@ func New(name string, modules ...Module) *Bot {
 }
 
 // cliContext creates the default context.Context that is used by the bot.
-// This context is cancelled if the bot receives a SIGINT, SIGQUIT or SIGTERM.
+// This context is canceled if the bot receives a SIGINT, SIGQUIT or SIGTERM.
 func cliContext() context.Context {
 	ctx, cancel := context.WithCancel(context.Background())
 	sig := make(chan os.Signal)
@@ -143,7 +143,7 @@ func newBot(ctx context.Context, logger *zap.Logger, name string, modules ...Mod
 }
 
 // Run starts the bot and runs its event handler loop until the bots context
-// is cancelled (by default via SIGINT, SIGQUIT or SIGTERM). If there was an
+// is canceled (by default via SIGINT, SIGQUIT or SIGTERM). If there was an
 // an error when setting up the Bot via New() or when registering the event
 // handlers it will be returned before the bot starts to process any events.
 func (b *Bot) Run() error {
