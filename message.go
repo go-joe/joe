@@ -17,10 +17,16 @@ type Message struct {
 	adapter Adapter
 }
 
+// Respond is a helper function to directly send a response back to the channel
+// the message originated from. This function ignores any error when sending the
+// response. If you want to handle the error use Message.RespondE instead.
 func (msg *Message) Respond(text string, args ...interface{}) {
 	_ = msg.RespondE(text, args...)
 }
 
+// RespondE is a helper function to directly send a response back to the channel
+// the message originated from. If there was an error it will be returned from
+// this function.
 func (msg *Message) RespondE(text string, args ...interface{}) error {
 	if len(args) > 0 {
 		text = fmt.Sprintf(text, args...)

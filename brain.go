@@ -21,34 +21,40 @@ type Brain struct {
 	mu     sync.RWMutex // mu protects concurrent access to the Memory
 	memory Memory
 
-	events         chan event
+	events         chan Event
 	handlers       map[reflect.Type][]eventHandler
 	handlerTimeout time.Duration // zero means no timeout
 
 	registrationErrs []error // any errors that occurred during setup (e.g. in Bot.RegisterHandler)
 }
 
-// An event represents a concrete event type and optional callbacks that are
+// An Event represents a concrete event type and optional callbacks that are
 // triggered when the event was processed by any handler.
-type event struct {
-	data      interface{}
-	callbacks []func(event)
+type Event struct {
+	Data      interface{}
+	Callbacks []func(Event)
 }
 
 // An event handler is a function that takes a context and the reflected value
 // of a concrete event type.
 type eventHandler func(context.Context, reflect.Value) error
 
+// The EventRegistry is the interface that is exposed to Adapter implementations
+// when connecting to the Brain. Note that this interface actually exposes direct
+// write access to the events channel to allow adapters to deliver events
+// synchronously and in deterministic order.
 type EventRegistry interface {
-	Channel() chan<- event
+	Channel() chan<- Event
 	RegisterHandler(function interface{})
 }
 
+// brainRegistry implements the EventRegistry to connect a Brain with its Adapter.
 type brainRegistry struct {
 	*Brain
 }
 
-func (a brainRegistry) Channel() chan<- event {
+// Channel returns the events channel of the brain.
+func (a brainRegistry) Channel() chan<- Event {
 	return a.events
 }
 
@@ -66,7 +72,7 @@ func NewBrain(logger *zap.Logger) *Brain {
 	return &Brain{
 		logger:   logger,
 		memory:   newInMemory(),
-		events:   make(chan event, 10),
+		events:   make(chan Event, 10),
 		handlers: make(map[reflect.Type][]eventHandler),
 	}
 }
@@ -138,9 +144,9 @@ func (b *Brain) connectAdapter(a Adapter) {
 
 // Emit sends the first argument as event to the brain from where it is
 // dispatched to all registered handlers.
-func (b *Brain) Emit(eventData interface{}, callbacks ...func(event)) {
+func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
 	go func() {
-		b.events <- event{data: eventData, callbacks: callbacks}
+		b.events <- Event{Data: event, Callbacks: callbacks}
 	}()
 }
 
@@ -149,7 +155,7 @@ func (b *Brain) Emit(eventData interface{}, callbacks ...func(event)) {
 // the brain might block indefinitely even if the context is canceled but an
 // event handler or callback is not respecting the context.
 func (b *Brain) HandleEvents(ctx context.Context) {
-	b.handleEvent(ctx, event{data: InitEvent{}})
+	b.handleEvent(ctx, Event{Data: InitEvent{}})
 
 	for {
 		select {
@@ -157,7 +163,7 @@ func (b *Brain) HandleEvents(ctx context.Context) {
 			b.handleEvent(ctx, evt)
 
 		case <-ctx.Done():
-			b.handleEvent(ctx, event{data: ShutdownEvent{}})
+			b.handleEvent(ctx, Event{Data: ShutdownEvent{}})
 			return
 		}
 	}
@@ -166,8 +172,8 @@ func (b *Brain) HandleEvents(ctx context.Context) {
 // handleEvent receives an event and determines which handler it must be
 // dispatched to using the reflect API. Additionally the function enforces any
 // event handler timeouts (if configured) and runs any event callbacks.
-func (b *Brain) handleEvent(ctx context.Context, evt event) {
-	event := reflect.ValueOf(evt.data)
+func (b *Brain) handleEvent(ctx context.Context, evt Event) {
+	event := reflect.ValueOf(evt.Data)
 	typ := event.Type()
 	b.logger.Debug("Handling new event",
 		zap.Stringer("event_type", typ),
@@ -186,7 +192,7 @@ func (b *Brain) handleEvent(ctx context.Context, evt event) {
 
 	// TODO: callbacks should also get a context
 	// TODO: respect context even if callbacks don't
-	for _, callback := range evt.callbacks {
+	for _, callback := range evt.Callbacks {
 		callback(evt)
 	}
 }

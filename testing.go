@@ -20,6 +20,7 @@ type TestingT interface {
 	FailNow()
 }
 
+// TestBot wraps a *Bot for unit tests.
 type TestBot struct {
 	*Bot
 	Input  io.Writer

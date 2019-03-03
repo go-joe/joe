@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // A Bot represents an event based chat bot. For the most simple usage you can
@@ -67,6 +68,50 @@ func New(name string, modules ...Module) *Bot {
 	return newBot(ctx, logger, name, modules...)
 }
 
+// cliContext creates the default context.Context that is used by the bot.
+// This context is cancelled if the bot receives a SIGINT, SIGQUIT or SIGTERM.
+func cliContext() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	sig := make(chan os.Signal)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	go func() {
+		select {
+		case <-sig:
+			cancel()
+		}
+	}()
+
+	return ctx
+}
+
+func newLogger() *zap.Logger {
+	cfg := zap.Config{
+		Level:       zap.NewAtomicLevelAt(zap.DebugLevel),
+		Development: false,
+		Encoding:    "console",
+		EncoderConfig: zapcore.EncoderConfig{
+			TimeKey:        "T",
+			LevelKey:       "L",
+			NameKey:        "N",
+			MessageKey:     "M",
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeLevel:    zapcore.CapitalLevelEncoder,
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+		},
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+
+	logger, err := cfg.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	return logger
+}
+
 func newBot(ctx context.Context, logger *zap.Logger, name string, modules ...Module) *Bot {
 	brain := NewBrain(logger.Named("brain"))
 
@@ -97,22 +142,6 @@ func newBot(ctx context.Context, logger *zap.Logger, name string, modules ...Mod
 		Brain:   brain,
 		initErr: multierr.Combine(conf.errs...),
 	}
-}
-
-// cliContext creates the default context.Context that is used by the bot.
-// This context is cancelled if the bot receives a SIGINT, SIGQUIT or SIGTERM.
-func cliContext() context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
-	sig := make(chan os.Signal)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
-	go func() {
-		select {
-		case <-sig:
-			cancel()
-		}
-	}()
-
-	return ctx
 }
 
 // Run starts the bot and runs its event handler loop until the bots context

@@ -60,8 +60,8 @@ func (a *CLIAdapter) Register(events EventRegistry) {
 	go a.loop(events.Channel())
 }
 
-func (a *CLIAdapter) loop(events chan<- event) {
-	callback := func(event) {
+func (a *CLIAdapter) loop(events chan<- Event) {
+	callback := func(Event) {
 		// We want to print the prefix each time we are done with handling a message.
 		_ = a.print(a.Prefix)
 	}
@@ -70,8 +70,8 @@ func (a *CLIAdapter) loop(events chan<- event) {
 
 	var (
 		lines = input      // channel represents the case that we receive a new message
-		emit  chan<- event // channel to activate the case that the event was delivered
-		evt   event        // the event to deliver (if any)
+		emit  chan<- Event // channel to activate the case that the event was delivered
+		evt   Event        // the event to deliver (if any)
 	)
 
 	for {
@@ -85,13 +85,13 @@ func (a *CLIAdapter) loop(events chan<- event) {
 
 			lines = nil   // disable this case
 			emit = events // enable the event delivery case
-			evt = event{data: ReceiveMessageEvent{Text: msg}}
-			evt.callbacks = append(evt.callbacks, callback)
+			evt = Event{Data: ReceiveMessageEvent{Text: msg}}
+			evt.Callbacks = append(evt.Callbacks, callback)
 
 		case emit <- evt:
 			emit = nil    // disable this case
 			lines = input // activate first case again
-			evt = event{} // release old event data
+			evt = Event{} // release old event data
 
 		case result := <-a.closing:
 			_ = a.print("\n")

@@ -19,7 +19,7 @@ type Config struct {
 }
 
 type EventEmitter interface {
-	Emit(event interface{}, callbacks ...func(event))
+	Emit(event interface{}, callbacks ...func(Event))
 }
 
 func (c *Config) Logger(name string) *zap.Logger {
