@@ -1,4 +1,4 @@
-<h1 align="center" style="border-bottom: none">Joe Bot</h1>
+<h1 align="center">Joe Bot</h1>
 <p align="center">A general-purpose bot library inspired by Hubot but written in Go.</p>
 <p align="center">
 	<a href="https://circleci.com/gh/go-joe/joe/tree/master"><img src="https://circleci.com/gh/go-joe/joe/tree/master.svg?style=shield"></a>
