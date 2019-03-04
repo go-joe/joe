@@ -310,11 +310,6 @@ func checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withCon
 		return
 	}
 
-	if evtType.Kind() != reflect.Struct {
-		err = errors.New("event handler argument must be a struct")
-		return
-	}
-
 	return evtType, withContext, nil
 }
 
