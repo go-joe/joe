@@ -15,5 +15,4 @@ jobs:
       - checkout
       - run: go test -race -coverprofile=coverage.txt -covermode=atomic
       - codecov/upload:
-        file: coverage.txt
-        flags: joe
+          file: coverage.txt
