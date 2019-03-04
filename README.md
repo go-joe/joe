@@ -1,7 +1,5 @@
-<p align="center">
-	<h1>Joe Bot</h1>
-</p>
-<p align="center">Joe is a general-purpose bot library inspired by Hubot but written in Go.</p>
+<h1 align="center" style="border-bottom: none">Joe Bot</h1>
+<p align="center">A general-purpose bot library inspired by Hubot but written in Go.</p>
 <p align="center">
 	<a href="https://circleci.com/gh/go-joe/joe/tree/master"><img src="https://circleci.com/gh/go-joe/joe/tree/master.svg?style=shield"></a>
 	<a href="https://goreportcard.com/report/github.com/go-joe/joe"><img src="https://goreportcard.com/badge/github.com/go-joe/joe"></a>
@@ -242,9 +240,10 @@ func (b *ExampleBot) HandleHTTP(context.Context, joehttp.RequestEvent) error {
 
 ## Available modules
 
-Joe ships with no custom modules to avoid pulling in more dependencies than you
-actually require. There are however already some modules that you can use directly
-to extend the functionality of your bot without writing too much code yourself.
+Joe ships with no third-party modules such as Redis integration to avoid pulling
+in more dependencies than you actually require. There are however already some
+modules that you can use directly to extend the functionality of your bot without
+writing too much code yourself.
 
 If you have written a module and want to share it, please add it to this list and
 open a pull request.
@@ -256,7 +255,7 @@ open a pull request.
 
 ## Built With
 
-* [zap](https://github.com/uber-go/zap) - Blazing fast, structured, leveled logging in Go 🗲
+* [zap](https://github.com/uber-go/zap) - Blazing fast, structured, leveled logging in Go
 * [pkg/errors](https://github.com/pkg/errors) - Simple error handling primitives
 * [testify](https://github.com/stretchr/testify) - A simple unit test library
 
