@@ -3,8 +3,9 @@
 <p align="center">
 	<a href="https://circleci.com/gh/go-joe/joe/tree/master"><img src="https://circleci.com/gh/go-joe/joe/tree/master.svg?style=shield"></a>
 	<a href="https://goreportcard.com/report/github.com/go-joe/joe"><img src="https://goreportcard.com/badge/github.com/go-joe/joe"></a>
-	<a href="https://godoc.org/github.com/go-joe/joe"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"></a>
-	<a href="https://github.com/go-joe/joe/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-4183c4.svg"></a>
+	<a href="https://github.com/go-joe/joe/releases"><img src="https://img.shields.io/github/tag/go-joe/joe.svg?label=version&color=brightgreen"></a>
+	<a href="https://godoc.org/github.com/go-joe/joe"><img src="https://img.shields.io/badge/godoc-reference-blue.svg?color=blue"></a>
+	<a href="https://github.com/go-joe/joe/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-4183c4.svg?color=blue"></a>
 </p>
 
 ---
@@ -12,6 +13,8 @@
 Joe is a library that helps you to write chat bots using [the Go programming language][go].
 It is very much inspired by the awesome [Hubot][hubot] framework developed by the
 folks at Github and brings its power to people who want to write chat bots using Go.
+
+**THIS SOFTWARE IS STILL IN ALPHA AND THERE ARE NO GUARANTEES REGARDING API STABILITY YET.**
 
 ## Getting Started
 
