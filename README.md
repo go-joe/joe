@@ -14,7 +14,7 @@ Joe is a library that helps you to write chat bots using [the Go programming lan
 It is very much inspired by the awesome [Hubot][hubot] framework developed by the
 folks at Github and brings its power to people who want to write chat bots using Go.
 
-**IMPORTANT NOTE: THIS SOFTWARE IS STILL IN ALPHA AND THERE ARE NO GUARANTEES REGARDING API STABILITY YET**
+**THIS SOFTWARE IS STILL IN ALPHA AND THERE ARE NO GUARANTEES REGARDING API STABILITY YET.**
 
 ## Getting Started
 
