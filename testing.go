@@ -111,13 +111,3 @@ func (b *TestBot) Stop() {
 		b.T.Errorf("Bot.Run() returned an error: %v", err)
 	}
 }
-
-// GetOutput reads all output from b.Output and returns it as string.
-func (b *TestBot) GetOutput() string {
-	out, err := ioutil.ReadAll(b.Output)
-	if err != nil {
-		b.T.Errorf("Failed to get TestBot.Output: %v", err)
-	}
-
-	return string(out)
-}
