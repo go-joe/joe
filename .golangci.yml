@@ -41,7 +41,23 @@ service:
     - GO111MODULE=on go mod vendor # required currently or golangci breaks
 
 issues:
+  exclude-use-default: false
   exclude-rules:
+    - text: "G104: Errors unhandled."
+      path: ".+_test\\.go"
+      linters:
+        - gosec
+
+    - text: "should have a package comment, unless it's in another file for this package"
+      linters:
+        - golint
+
     - text: "Using the variable on range scope `c` in function literal"
+      path: ".+_test\\.go"
       linters:
         - scopelint
+
+    - text: "t` can be `github.com/stretchr/testify/assert.TestingT"
+      path: "testing.go"
+      linters:
+        - interfacer
