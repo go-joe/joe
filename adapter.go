@@ -61,18 +61,29 @@ func (a *CLIAdapter) Register(events EventRegistry) {
 }
 
 func (a *CLIAdapter) loop(events chan<- Event) {
-	callback := func(Event) {
-		// We want to print the prefix each time we are done with handling a message.
-		_ = a.print(a.Prefix)
-	}
-
 	input := a.readLines()
+
+	// The adapter loop is built to stay responsive even if the Brain stops
+	// processing events so we can safely close the CLIAdapter. This makes the
+	// adapter deterministic and easy to test. Message events are always
+	// delivered in the correct order and the callback at the very end happens
+	// before we process the next input line.
 
 	var (
 		lines = input      // channel represents the case that we receive a new message
 		emit  chan<- Event // channel to activate the case that the event was delivered
 		evt   Event        // the event to deliver (if any)
 	)
+
+	// We want to print the prefix each time when the Brain has completely
+	// processed a ReceiveMessageEvent and before we are emitting the next one.
+	// This gives us a shell-like behavior which signals to the user that she
+	// can input more data on the CLI. This channel is buffered so we do not
+	// block the Brain when it executes the callback.
+	callback := make(chan Event, 1)
+	callbackFun := func(evt Event) {
+		callback <- evt
+	}
 
 	for {
 		select {
@@ -86,12 +97,17 @@ func (a *CLIAdapter) loop(events chan<- Event) {
 			lines = nil   // disable this case
 			emit = events // enable the event delivery case
 			evt = Event{Data: ReceiveMessageEvent{Text: msg}}
-			evt.Callbacks = append(evt.Callbacks, callback)
+			evt.Callbacks = append(evt.Callbacks, callbackFun)
 
 		case emit <- evt:
 			emit = nil    // disable this case
-			lines = input // activate first case again
 			evt = Event{} // release old event data
+
+		case <-callback:
+			// This case is executed after all ReceiveMessageEvent handlers have
+			// completed and we can continue with the next line.
+			_ = a.print(a.Prefix)
+			lines = input // activate first case again
 
 		case result := <-a.closing:
 			_ = a.print("\n")
@@ -141,6 +157,7 @@ func (a *CLIAdapter) Close() error {
 		return errors.Errorf("already closed")
 	}
 
+	a.Logger.Debug("Closing CLIAdapter")
 	callback := make(chan error)
 	a.closing <- callback
 	err := <-callback

@@ -115,8 +115,16 @@ func TestBrain_RegisterHandler(t *testing.T) {
 
 			// Start the brains event handler loop.
 			ctx, cancel := context.WithCancel(context.Background())
-			go b.HandleEvents(ctx)
-			defer cancel()
+			brainDone := make(chan bool)
+			go func() {
+				b.HandleEvents(ctx)
+				brainDone <- true
+			}()
+
+			defer func() {
+				cancel()
+				<-brainDone
+			}()
 
 			// Emit our test event.
 			wg := new(sync.WaitGroup)

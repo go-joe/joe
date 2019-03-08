@@ -21,9 +21,6 @@ func cliTestAdapter(t *testing.T) (a *CLIAdapter, output *bytes.Buffer) {
 }
 
 func TestCLIAdapter_Register(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
-
 	input := new(bytes.Buffer)
 	a, output := cliTestAdapter(t)
 	a.Input = ioutil.NopCloser(input)
@@ -38,7 +35,13 @@ func TestCLIAdapter_Register(t *testing.T) {
 	})
 
 	brain.connectAdapter(a)
-	go brain.HandleEvents(ctx)
+
+	ctx, stopBrain := context.WithCancel(context.Background())
+	brainStopped := make(chan bool)
+	go func() {
+		brain.HandleEvents(ctx)
+		brainStopped <- true
+	}()
 
 	msg1 := <-messages
 	msg2 := <-messages
@@ -46,6 +49,11 @@ func TestCLIAdapter_Register(t *testing.T) {
 	assert.Equal(t, "Hello", msg1.Text)
 	assert.Equal(t, "World", msg2.Text)
 
+	// Stop the brain to make sure we are done with all callbacks
+	stopBrain()
+	<-brainStopped
+
+	// Close the adapter to finish up the test
 	assert.NoError(t, a.Close())
 
 	expectedOutput := strings.Join([]string{
