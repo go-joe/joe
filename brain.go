@@ -287,17 +287,27 @@ func checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withCon
 	evtType = handlerFunc.In(numParams - 1) // last argument must be the event
 	withContext = numParams == 2
 
-	if evtType.Kind() != reflect.Struct {
-		err = errors.New("event handler argument must be a struct")
-		return
-	}
-
 	if withContext {
 		contextInterface := reflect.TypeOf((*context.Context)(nil)).Elem()
-		if !handlerFunc.In(0).Implements(contextInterface) {
-			err = errors.New("event handler has 2 arguments but the first is not a context.Context")
+		if handlerFunc.In(1).Implements(contextInterface) {
+			err = errors.New("event handler context must be the first argument")
 			return
 		}
+		if !handlerFunc.In(0).Implements(contextInterface) {
+			err = errors.New("event handler has two arguments but the first is not a context.Context")
+			return
+		}
+	}
+
+	switch evtType.Kind() {
+	case reflect.Struct:
+		// ok cool, move on
+	case reflect.Ptr:
+		err = errors.New("event handler argument must be a struct and not a pointer")
+		return
+	default:
+		err = errors.New("event handler argument must be a struct")
+		return
 	}
 
 	return evtType, withContext, nil
@@ -310,7 +320,7 @@ func checkHandlerReturnValues(handlerFunc reflect.Type) (returnsError bool, err 
 	case 1:
 		errorInterface := reflect.TypeOf((*error)(nil)).Elem()
 		if !handlerFunc.Out(0).Implements(errorInterface) {
-			err = errors.New("if the event handler has a return value i must implement the error interface")
+			err = errors.New("if the event handler has a return value it must implement the error interface")
 			return
 		}
 		return true, nil
