@@ -39,3 +39,9 @@ service:
   golangci-lint-version: 1.15.x # use the fixed version to not introduce new linters unexpectedly
   prepare:
     - GO111MODULE=on go mod vendor # required currently or golangci breaks
+
+issues:
+  exclude-rules:
+    - text: "Using the variable on range scope `c` in function literal"
+      linters:
+        - scopelint

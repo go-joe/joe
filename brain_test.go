@@ -97,7 +97,6 @@ func TestBrain_RegisterHandler(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
 			logger := zaptest.NewLogger(t)
 
 			b := NewBrain(logger)
@@ -115,6 +114,7 @@ func TestBrain_RegisterHandler(t *testing.T) {
 			require.Empty(t, b.registrationErrs, "unexpected registration errors")
 
 			// Start the brains event handler loop.
+			ctx, cancel := context.WithCancel(context.Background())
 			go b.HandleEvents(ctx)
 			defer cancel()
 
@@ -259,9 +259,9 @@ func TestBrain_HandlerPanics(t *testing.T) {
 // EmitSync emits the given event on the brain and blocks until it has received
 // the context which indicates that the event was fully processed by all
 // matching handlers.
-func EmitSync(b *Brain, event interface{}) {
+func EmitSync(brain EventEmitter, event interface{}) {
 	done := make(chan bool)
 	callback := func(Event) { done <- true }
-	b.Emit(event, callback)
+	brain.Emit(event, callback)
 	<-done
 }
