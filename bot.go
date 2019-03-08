@@ -1,4 +1,4 @@
-// Package joe is a general purpose bot library inspired by Hubot.
+// Package joe contains a general purpose bot library inspired by Hubot.
 package joe
 
 import (

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Add new functions to `TestBot` type to ease bot start and shutdown in unit tests
+- Add new function to `TestBot` to emit events synchronously 
 
 ### Changed
 - Remove context argument from `NewTest(…)` function

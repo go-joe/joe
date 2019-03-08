@@ -78,8 +78,8 @@ func (a *CLIAdapter) loop(events chan<- Event) {
 	// We want to print the prefix each time when the Brain has completely
 	// processed a ReceiveMessageEvent and before we are emitting the next one.
 	// This gives us a shell-like behavior which signals to the user that she
-	// can input more data on the CLI. This channel buffered so we do not block
-	// the Brain when it calls the callback.
+	// can input more data on the CLI. This channel is buffered so we do not
+	// block the Brain when it executes the callback.
 	callback := make(chan Event, 1)
 	callbackFun := func(evt Event) {
 		callback <- evt
@@ -104,8 +104,8 @@ func (a *CLIAdapter) loop(events chan<- Event) {
 			evt = Event{} // release old event data
 
 		case <-callback:
-			// This is executed after all handlers have been executed and we can
-			// continue with the next line.
+			// This case is executed after all ReceiveMessageEvent handlers have
+			// completed and we can continue with the next line.
 			_ = a.print(a.Prefix)
 			lines = input // activate first case again
 
