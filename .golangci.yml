@@ -58,6 +58,5 @@ issues:
         - scopelint
 
     - text: "`t` can be `github.com/stretchr/testify/assert.TestingT`"
-      path: "testing.go"
       linters:
         - interfacer
