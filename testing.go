@@ -108,6 +108,6 @@ func (b *TestBot) Stop() {
 	b.stop()
 	err := <-b.runErr
 	if err != nil {
-		b.T.Errorf("Bot.Run() returned an error: %v")
+		b.T.Errorf("Bot.Run() returned an error: %v", err)
 	}
 }
