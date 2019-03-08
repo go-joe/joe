@@ -6,11 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Add new functions to `TestBot` type to ease bot start and shutdown in unit tests
-- Add new function to `TestBot` to emit events synchronously 
+- Add `TestBot.Start()` and `TestBot.Stop()`to ease synchronously starting and stopping bot in unit tests
+- Add `TestBot.EmitSync(…)` to emit events synchronously in unit tests 
+- Add `TestBot.GetOutput()` to easily get adapter output in unit tests
 
 ### Changed
-- Remove context argument from `NewTest(…)` function
+- Remove obsolete context argument from `NewTest(…)` function
 
 ## [v0.1.0] - 2019-03-03
 

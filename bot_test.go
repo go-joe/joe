@@ -8,10 +8,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 )
-
-// TODO: test Bot.Say
 
 func TestBot_Run(t *testing.T) {
 	b := NewTest(t)
@@ -137,6 +139,7 @@ func TestBot_RespondRegex(t *testing.T) {
 		"NAME IS Joe":                       {"Joe"}, // simple case, case insensitive
 		"Hello, my name is Joe":             {"Joe"}, // match on substrings
 		"My name is Joe and what is yours?": nil,     // respect end of input anchor
+		"":                                  nil,     // should not match but also not panic
 	}
 
 	for input, matches := range cases {
@@ -161,6 +164,42 @@ func TestBot_RespondRegex(t *testing.T) {
 			t.Errorf("timeout: %s", input)
 		}
 	}
+}
+
+func TestBot_RespondRegex_Empty(t *testing.T) {
+	b := NewTest(t)
+	b.RespondRegex("", func(msg Message) error {
+		t.Error("should never match")
+		return nil
+	})
+
+	b.Start()
+	defer b.Stop()
+
+	cases := []string{
+		"",
+		"   ",
+		"\n",
+		"\t",
+		"foobar",
+		"foo bar",
+	}
+
+	for _, input := range cases {
+		b.EmitSync(t, ReceiveMessageEvent{Text: input})
+	}
+}
+
+func TestBot_RespondRegex_Invalid(t *testing.T) {
+	b := NewTest(t)
+	b.RespondRegex("this is not a [valid regular expression", func(msg Message) error {
+		t.Error("should never match")
+		return nil
+	})
+
+	err := b.Run()
+	require.EqualError(t, err, "invalid event handlers: failed to add Response handler: "+
+		"error parsing regexp: missing closing ]: `[valid regular expression`")
 }
 
 func TestBot_CloseAdapter(t *testing.T) {
@@ -211,6 +250,47 @@ func TestBot_RegistrationErrors(t *testing.T) {
 	assert.Regexp(t, "event handler needs one or two arguments", err.Error())
 }
 
+// TestBot_Logger simply tests that the zap logger configuration in newLogger()
+// doesn't panic.
+func TestBot_Logger(t *testing.T) {
+	newLogger()
+}
+
+func TestBot_Say(t *testing.T) {
+	a := new(MockAdapter)
+	b := NewTest(t)
+	b.Adapter = a
+
+	a.On("Send", "Hello world", "foo").Return(nil)
+	b.Say("foo", "Hello world")
+
+	a.On("Send", "Hello world: the answer is 42", "bar").Return(nil)
+	b.Say("bar", "Hello %s: the answer is %d", "world", 42)
+
+	a.AssertExpectations(t)
+}
+
+func TestBot_Say_Error(t *testing.T) {
+	obs, logs := observer.New(zap.DebugLevel)
+	logger := zap.New(obs)
+
+	a := new(MockAdapter)
+	b := NewTest(t)
+	b.Adapter = a
+	b.Logger = logger
+
+	adapterErr := errors.New("watch your language")
+	a.On("Send", "damn it", "baz").Return(adapterErr)
+	b.Say("baz", "damn it")
+
+	assert.Equal(t, []observer.LoggedEntry{{
+		Entry:   zapcore.Entry{Level: zap.ErrorLevel, Message: "Failed to send message"},
+		Context: []zapcore.Field{zap.Error(adapterErr)},
+	}}, logs.AllUntimed())
+
+	a.AssertExpectations(t)
+}
+
 type testCloser struct {
 	Closed bool
 	io.Reader
@@ -228,4 +308,22 @@ func wait(t *testing.T, c chan bool) {
 	case <-time.After(time.Second):
 		t.Fatal("timeout")
 	}
+}
+
+type MockAdapter struct {
+	mock.Mock
+}
+
+func (a *MockAdapter) Register(r EventRegistry) {
+	a.Called(r)
+}
+
+func (a *MockAdapter) Send(text, channel string) error {
+	args := a.Called(text, channel)
+	return args.Error(0)
+}
+
+func (a *MockAdapter) Close() error {
+	args := a.Called()
+	return args.Error(0)
 }
