@@ -1,12 +1,10 @@
 package joe
 
-import (
-	"context"
-	"fmt"
-)
+import "fmt"
 
 func ExampleBrain_RegisterHandler() {
-	done := make(chan bool)
+	done := make(chan bool) // just to cleanly shutdown when we processed the event
+
 	type CustomEvent struct{ Test bool }
 
 	b := NewBrain(nil)
@@ -15,12 +13,11 @@ func ExampleBrain_RegisterHandler() {
 		done <- true
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go b.HandleEvents(ctx)
-
+	go b.HandleEvents()
 	b.Emit(CustomEvent{Test: true})
 
 	<-done
-	cancel()
+	b.Shutdown()
+
 	// Output: Received custom event: {Test:true}
 }

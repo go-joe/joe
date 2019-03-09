@@ -2,7 +2,6 @@ package joe
 
 import (
 	"bytes"
-	"context"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -36,12 +35,7 @@ func TestCLIAdapter_Register(t *testing.T) {
 
 	brain.connectAdapter(a)
 
-	ctx, stopBrain := context.WithCancel(context.Background())
-	brainStopped := make(chan bool)
-	go func() {
-		brain.HandleEvents(ctx)
-		brainStopped <- true
-	}()
+	go brain.HandleEvents()
 
 	msg1 := <-messages
 	msg2 := <-messages
@@ -50,8 +44,7 @@ func TestCLIAdapter_Register(t *testing.T) {
 	assert.Equal(t, "World", msg2.Text)
 
 	// Stop the brain to make sure we are done with all callbacks
-	stopBrain()
-	<-brainStopped
+	brain.Shutdown()
 
 	// Close the adapter to finish up the test
 	assert.NoError(t, a.Close())

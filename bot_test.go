@@ -35,7 +35,7 @@ func TestBot_Run(t *testing.T) {
 	}()
 
 	wait(t, initEvt)
-	b.Stop()
+	go b.Stop()
 
 	wait(t, shutdownEvt)
 	wait(t, runExit)
@@ -291,7 +291,8 @@ func TestBot_Say_Error(t *testing.T) {
 	a.AssertExpectations(t)
 }
 
-// TODO: explain what this test is about
+// TestBot_HandlerEvents tests if event handler functions can safely (i.e. without
+// deadlock or panic) emit new events.
 func TestBot_HandlerEvents(t *testing.T) {
 	b := NewTest(t)
 
@@ -319,9 +320,7 @@ func TestBot_HandlerEvents(t *testing.T) {
 	for i := 0; i < msgEvents; i++ {
 		b.EmitSync(t, ReceiveMessageEvent{})
 	}
-
-	time.Sleep(10 * time.Millisecond) // TODO!!
-	b.Stop()
+	b.Stop() // should block until all events have been processed
 
 	require.Equal(t, msgEvents*testEventsPerMsg, len(receivedEvents), "did not receive enough events")
 	for i := 0; i < msgEvents; i++ {
@@ -329,7 +328,6 @@ func TestBot_HandlerEvents(t *testing.T) {
 			idx := i*testEventsPerMsg + j
 			n := receivedEvents[idx].N
 			require.Equal(t, j, n, "i=%d j=%d", i, j)
-			// t.Logf("OK: %d (i=%d j=%d)", n, i, j)
 		}
 	}
 }

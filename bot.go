@@ -115,12 +115,11 @@ func newBot(ctx context.Context, logger *zap.Logger, name string, modules ...Mod
 	brain := NewBrain(logger.Named("brain"))
 
 	conf := &Config{
-		Context:        ctx,
-		Name:           name,
-		HandlerTimeout: brain.handlerTimeout,
-		adapter:        NewCLIAdapter(name, logger),
-		logger:         logger,
-		brain:          brain,
+		Context: ctx,
+		Name:    name,
+		adapter: NewCLIAdapter(name, logger),
+		logger:  logger,
+		brain:   brain,
 	}
 
 	conf.logger.Info("Initializing bot", zap.String("name", name))
@@ -131,8 +130,6 @@ func newBot(ctx context.Context, logger *zap.Logger, name string, modules ...Mod
 		}
 	}
 
-	// apply all configuration options
-	brain.handlerTimeout = conf.HandlerTimeout
 	return &Bot{
 		Name:    conf.Name,
 		ctx:     conf.Context,
@@ -159,8 +156,14 @@ func (b *Bot) Run() error {
 
 	b.Brain.connectAdapter(b.Adapter)
 
+	go func() {
+		// TODO: improve this a bit
+		<-b.ctx.Done()
+		b.Brain.Shutdown()
+	}()
+
 	b.Logger.Info("Bot initialized and ready to operate", zap.String("name", b.Name))
-	b.Brain.HandleEvents(b.ctx)
+	b.Brain.HandleEvents()
 
 	err := b.Adapter.Close()
 	b.Logger.Info("Bot is shutting down", zap.String("name", b.Name))

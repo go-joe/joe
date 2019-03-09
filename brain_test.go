@@ -114,17 +114,8 @@ func TestBrain_RegisterHandler(t *testing.T) {
 			require.Empty(t, b.registrationErrs, "unexpected registration errors")
 
 			// Start the brains event handler loop.
-			ctx, cancel := context.WithCancel(context.Background())
-			brainDone := make(chan bool)
-			go func() {
-				b.HandleEvents(ctx)
-				brainDone <- true
-			}()
-
-			defer func() {
-				cancel()
-				<-brainDone
-			}()
+			go b.HandleEvents()
+			defer b.Shutdown()
 
 			// Emit our test event.
 			wg := new(sync.WaitGroup)
@@ -163,9 +154,8 @@ func TestBrain_HandlerErrors(t *testing.T) {
 		return handlerErr
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go b.HandleEvents(ctx)
-	defer cancel()
+	go b.HandleEvents()
+	defer b.Shutdown()
 
 	EmitSync(b, TestEvent{})
 
@@ -193,9 +183,8 @@ func TestBrain_Emit_PassAllEventData(t *testing.T) {
 		seen = evt
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go b.HandleEvents(ctx)
-	defer cancel()
+	go b.HandleEvents()
+	defer b.Shutdown()
 
 	event := TestEvent{Test: true, unexported: "hello"}
 	EmitSync(b, event)
@@ -215,9 +204,8 @@ func TestBrain_Emit_ImmutableEvent(t *testing.T) {
 		evt.String = "bar"
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go b.HandleEvents(ctx)
-	defer cancel()
+	go b.HandleEvents()
+	defer b.Shutdown()
 
 	event := TestEvent{String: "foo"}
 	EmitSync(b, event)
@@ -240,9 +228,8 @@ func TestBrain_HandlerPanics(t *testing.T) {
 		panic("something went horribly wrong")
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go b.HandleEvents(ctx)
-	defer cancel()
+	go b.HandleEvents()
+	defer b.Shutdown()
 
 	EmitSync(b, TestEvent{})
 	assert.True(t, handlerCalled)
@@ -273,12 +260,7 @@ func TestBrain_Memory(t *testing.T) {
 		events = append(events, evt)
 	})
 
-	ctx, closeBrain := context.WithCancel(context.Background())
-	brainClosed := make(chan bool)
-	go func() {
-		b.HandleEvents(ctx)
-		brainClosed <- true
-	}()
+	go b.HandleEvents()
 
 	require.NoError(t, b.Set("foo", "bar"))
 	require.NoError(t, b.Set("hello", "world"))
@@ -296,19 +278,7 @@ func TestBrain_Memory(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ok)
 
-	time.Sleep(10 * time.Millisecond)
-
-	closeBrain()
-	<-brainClosed
-
-	/*
-		TODO: This unit test shows yet again that emitting events in goroutines means
-		      that there is no implied order between two emitted events. This is highly
-		      problematic for memory events because the user will expect they are coming
-		      in the order in which they did actually occur. Many events will become useless
-		      at best if we cannot fix this and in the worst case it will produce very unexpected
-		      and hard to detect and thus frustrating bugs in concrete bot implementations.
-	*/
+	b.Shutdown()
 
 	expectedEvents := []BrainMemoryEvent{
 		{Operation: "set", Key: "foo", Value: "bar"},

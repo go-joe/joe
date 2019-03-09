@@ -28,7 +28,6 @@ type TestBot struct {
 	Input  io.Writer
 	Output io.Reader
 
-	stop   func()
 	runErr chan error
 }
 
@@ -40,6 +39,7 @@ type TestBot struct {
 // For ease of testing a TestBot can be started and stopped without a cancel via
 // TestBot.Start() and TestBot.Stop().
 func NewTest(t TestingT, modules ...Module) *TestBot {
+	ctx := context.Background()
 	logger := zaptest.NewLogger(t)
 	input := new(bytes.Buffer)
 	output := new(bytes.Buffer)
@@ -50,9 +50,6 @@ func NewTest(t TestingT, modules ...Module) *TestBot {
 		Output: output,
 		runErr: make(chan error, 1), // buffered so we can return from Bot.Run without blocking
 	}
-
-	ctx := context.Background()
-	ctx, b.stop = context.WithCancel(ctx)
 
 	testAdapter := func(conf *Config) error {
 		a := NewCLIAdapter("test", conf.Logger("adapter"))
@@ -106,7 +103,7 @@ func (b *TestBot) Run() error {
 // returned an error it is passed to the Errorf function of the TestingT that
 // was used to create the TestBot.
 func (b *TestBot) Stop() {
-	b.stop()
+	b.Brain.Shutdown()
 	err := <-b.runErr
 	if err != nil {
 		b.T.Errorf("Bot.Run() returned an error: %v", err)

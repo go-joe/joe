@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -24,9 +23,11 @@ type Brain struct {
 	mu     sync.RWMutex // mu protects concurrent access to the Memory
 	memory Memory
 
-	events         chan Event
-	handlers       map[reflect.Type][]eventHandler
-	handlerTimeout time.Duration // zero means no timeout
+	eventsInput chan Event // input for any new events, the Brain ensures that callers never block when writing to it
+	eventsLoop  chan Event // used in Brain.HandleEvents() to actually process the events
+	shutdown    chan chan bool
+
+	handlers map[reflect.Type][]eventHandler
 
 	registrationErrs []error // any errors that occurred during setup (e.g. in Bot.RegisterHandler)
 }
@@ -58,7 +59,7 @@ type brainRegistry struct {
 
 // Channel returns the events channel of the brain.
 func (a brainRegistry) Channel() chan<- Event {
-	return a.events
+	return a.eventsInput
 }
 
 // NewBrain creates a new robot Brain. By default the Brain will use a Memory
@@ -72,12 +73,18 @@ func NewBrain(logger *zap.Logger) *Brain {
 		logger = zap.NewNop()
 	}
 
-	return &Brain{
-		logger:   logger,
-		memory:   newInMemory(),
-		events:   make(chan Event),
-		handlers: make(map[reflect.Type][]eventHandler),
+	b := &Brain{
+		logger:      logger,
+		memory:      newInMemory(),
+		eventsInput: make(chan Event),
+		eventsLoop:  make(chan Event),
+		shutdown:    make(chan chan bool),
+		handlers:    make(map[reflect.Type][]eventHandler),
 	}
+
+	b.consumeEvents()
+
+	return b
 }
 
 // RegisterHandler registers a function to be executed when a specific event is
@@ -149,41 +156,54 @@ func (b *Brain) connectAdapter(a Adapter) {
 // dispatched to all registered handlers. This function blocks until the event
 // handler was started via Brain.HandleEvents(…). When the event handler is
 // running it will return immediately.
-//
-// TODO: do not block when HandleEvents is not yet running
 func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
-	b.events <- Event{Data: event, Callbacks: callbacks}
+	// TODO: do not panic if Brain is already shutting down
+	b.eventsInput <- Event{Data: event, Callbacks: callbacks}
 }
 
 // HandleEvents starts the event handler loop of the Brain. This function blocks
-// until the passed context is canceled. If no handler timeout was configured
-// the brain might block indefinitely even if the context is canceled but an
-// event handler or callback is not respecting the context.
-func (b *Brain) HandleEvents(ctx context.Context) {
-	b.handleEvent(ctx, Event{Data: InitEvent{}})
+// until Brain.Shutdown() is canceled. If no handler timeout was configured
+// the brain might block indefinitely even if the brain is shutting down but an
+// event handler or callback is unresponsive.
+func (b *Brain) HandleEvents() {
+	b.handleEvent(Event{Data: InitEvent{}})
 
-	events := b.consumeEvents(ctx)
+	var shutdownCallback chan bool // set when Brain.Shutdown() is called
 
 	for {
 		select {
-		case evt := <-events:
-			b.handleEvent(ctx, evt)
+		case evt, ok := <-b.eventsLoop:
+			if !ok {
+				// Brain.consumeEvents() is done processing all remaining events
+				// and we can now safely shutdown the event handler, knowing that
+				// all pending events have been processed.
+				b.handleEvent(Event{Data: ShutdownEvent{}})
+				shutdownCallback <- true
+				return
+			}
 
-		case <-ctx.Done():
-			b.handleEvent(ctx, Event{Data: ShutdownEvent{}})
-			return
+			b.handleEvent(evt)
+
+		case shutdownCallback = <-b.shutdown:
+			// The Brain is shutting down. We have to close the input channel so
+			// we doe no longer accept new events and only process the remaining
+			// pending events. When the goroutine of Brain.consumeEvents() is
+			// done it will close the events loop channel and the case above will
+			// use the shutdown callback and return from this function.
+			close(b.eventsInput)
 		}
 	}
 }
 
-// consumeEvents continuously reads events from b.events in a new goroutine so
-// emitting an event never blocks on the caller. All events will be returned in
-// the result channel of this function in the same order in which they have been
-// inserted into b.events. In this sense this function provides an events channel
-// with "infinite" capacity.
-func (b *Brain) consumeEvents(ctx context.Context) chan Event {
+// consumeEvents continuously reads events from b.eventsInput in a new goroutine
+// so emitting an event never blocks on the caller. All events will be returned
+// in the result channel of this function in the same order in which they have
+// been inserted into b.events. In this sense this function provides an events
+// channel with "infinite" capacity. The spawned goroutine stops when the
+// b.eventsInput channel is closed.
+func (b *Brain) consumeEvents() {
 	var queue []Event
-	events := make(chan Event)
+	b.eventsLoop = make(chan Event)
 
 	outChan := func() chan Event {
 		if len(queue) == 0 {
@@ -192,7 +212,7 @@ func (b *Brain) consumeEvents(ctx context.Context) chan Event {
 			return nil
 		}
 
-		return events
+		return b.eventsLoop
 	}
 
 	nextEvt := func() Event {
@@ -210,23 +230,30 @@ func (b *Brain) consumeEvents(ctx context.Context) chan Event {
 	go func() {
 		for {
 			select {
-			case evt := <-b.events:
+			case evt, ok := <-b.eventsInput:
+				if !ok {
+					// Events input channel was closed because Brain is shutting
+					// down. Emit all pending events from the queue and then close
+					// the events loop channel so Brain.HandleEvents() can exit.
+					for _, evt := range queue {
+						b.eventsLoop <- evt
+					}
+					close(b.eventsLoop)
+					return
+				}
+
 				queue = append(queue, evt)
 			case outChan() <- nextEvt(): // disabled if len(queue) == 0
 				queue = queue[1:]
-			case <-ctx.Done():
-				return
 			}
 		}
 	}()
-
-	return events
 }
 
-// handleEvent receives an event and determines which handler it must be
-// dispatched to using the reflect API. Additionally the function enforces any
-// event handler timeouts (if configured) and runs any event callbacks.
-func (b *Brain) handleEvent(ctx context.Context, evt Event) {
+// handleEvent receives an event and dispatches it to all registered handlers
+// using the reflect API. When all applicable handlers are called (maybe none)
+// the function runs all event callbacks.
+func (b *Brain) handleEvent(evt Event) {
 	event := reflect.ValueOf(evt.Data)
 	typ := event.Type()
 	b.logger.Debug("Handling new event",
@@ -234,8 +261,9 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 		zap.Int("handlers", len(b.handlers[typ])),
 	)
 
+	ctx := context.TODO() // TODO, what do we want here?
 	for _, handler := range b.handlers[typ] {
-		err := b.executeEventHandler(ctx, handler, event)
+		err := handler(ctx, event)
 		if err != nil {
 			b.logger.Error("Event handler failed",
 				// TODO: somehow log the name of the handler
@@ -244,30 +272,8 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 		}
 	}
 
-	// TODO: callbacks should also get a context
-	// TODO: respect context even if callbacks don't
 	for _, callback := range evt.Callbacks {
 		callback(evt)
-	}
-}
-
-func (b *Brain) executeEventHandler(ctx context.Context, handler eventHandler, event reflect.Value) error {
-	if b.handlerTimeout > 0 {
-		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, b.handlerTimeout)
-		defer cancel()
-	}
-
-	done := make(chan error)
-	go func() {
-		done <- handler(ctx, event)
-	}()
-
-	select {
-	case err := <-done:
-		return err
-	case <-ctx.Done():
-		return ctx.Err()
 	}
 }
 
@@ -317,15 +323,11 @@ func (b *Brain) Memories() (map[string]string, error) {
 	return data, err
 }
 
-// Close is a wrapper around the Brains Memory.Close function to allow
-// concurrent access.
-func (b *Brain) Close() error {
-	b.mu.Lock()
-	b.logger.Debug("Shutting down brain")
-	err := b.memory.Close()
-	b.mu.Unlock()
-
-	return err
+func (b *Brain) Shutdown() {
+	// TODO: do not block if Brain was not yet started (unit test)
+	callback := make(chan bool)
+	b.shutdown <- callback
+	<-callback
 }
 
 func checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withContext bool, err error) {
