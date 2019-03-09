@@ -355,8 +355,8 @@ type MockAdapter struct {
 	mock.Mock
 }
 
-func (a *MockAdapter) Register(r EventRegistry) {
-	a.Called(r)
+func (a *MockAdapter) RegisterAt(b *Brain) {
+	a.Called(b)
 }
 
 func (a *MockAdapter) Send(text, channel string) error {

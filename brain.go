@@ -43,31 +43,11 @@ type Event struct {
 // of a concrete event type.
 type eventHandler func(context.Context, reflect.Value) error
 
-// The EventRegistry is the interface that is exposed to Adapter implementations
-// when connecting to the Brain. Note that this interface actually exposes direct
-// write access to the events channel to allow adapters to deliver events
-// synchronously and in deterministic order.
-type EventRegistry interface {
-	Channel() chan<- Event
-	RegisterHandler(function interface{})
-}
-
-// brainRegistry implements the EventRegistry to connect a Brain with its Adapter.
-type brainRegistry struct {
-	*Brain
-}
-
-// Channel returns the events channel of the brain.
-func (a brainRegistry) Channel() chan<- Event {
-	return a.eventsInput
-}
-
 // NewBrain creates a new robot Brain. By default the Brain will use a Memory
 // implementation that stores all keys and values directly in memory. You can
 // change the memory implementation afterwards by simply assigning to
 // Brain.Memory. If the passed logger is nil it will fallback to the
-// zap.NewNop() logger. By default no timeout will be enforced on the event
-// handlers.
+// zap.NewNop() logger.
 func NewBrain(logger *zap.Logger) *Brain {
 	if logger == nil {
 		logger = zap.NewNop()
@@ -148,10 +128,6 @@ func (b *Brain) registerHandler(fun interface{}) error {
 	return nil
 }
 
-func (b *Brain) connectAdapter(a Adapter) {
-	a.Register(brainRegistry{b})
-}
-
 // Emit sends the first argument as event to the brain from where it is
 // dispatched to all registered handlers. This function blocks until the event
 // handler was started via Brain.HandleEvents(…). When the event handler is
@@ -162,9 +138,7 @@ func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
 }
 
 // HandleEvents starts the event handler loop of the Brain. This function blocks
-// until Brain.Shutdown() is canceled. If no handler timeout was configured
-// the brain might block indefinitely even if the brain is shutting down but an
-// event handler or callback is unresponsive.
+// until Brain.Shutdown() is canceled.
 func (b *Brain) HandleEvents() {
 	b.handleEvent(Event{Data: InitEvent{}})
 
@@ -323,6 +297,9 @@ func (b *Brain) Memories() (map[string]string, error) {
 	return data, err
 }
 
+// Shutdown stops event handler loop of the Brain and waits until all pending
+// events have been processed. After the brain is shutdown, it will no longer
+// accept new events.
 func (b *Brain) Shutdown() {
 	// TODO: do not block if Brain was not yet started (unit test)
 	callback := make(chan bool)

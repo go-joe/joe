@@ -154,7 +154,7 @@ func (b *Bot) Run() error {
 		return errors.Wrap(errs, "invalid event handlers")
 	}
 
-	b.Brain.connectAdapter(b.Adapter)
+	b.Adapter.RegisterAt(b.Brain)
 
 	go func() {
 		// TODO: improve this a bit

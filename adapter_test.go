@@ -33,7 +33,7 @@ func TestCLIAdapter_Register(t *testing.T) {
 		messages <- msg
 	})
 
-	brain.connectAdapter(a)
+	a.RegisterAt(brain)
 
 	go brain.HandleEvents()
 
@@ -70,7 +70,7 @@ func TestCLIAdapter_Close(t *testing.T) {
 	a, output := cliTestAdapter(t)
 	a.Input = ioutil.NopCloser(input)
 	brain := NewBrain(a.Logger)
-	brain.connectAdapter(a)
+	a.RegisterAt(brain)
 
 	err := a.Close()
 	require.NoError(t, err)
