@@ -17,7 +17,7 @@ import (
 )
 
 // TODO: test shutdown event context is not already canceled → Brain test
-// TODO: test NewBrain uses in memory brain by default
+// TODO: test Brain.Close closes memory
 // TODO: test Brain.Emit is asynchronous
 // TODO: test HandleEvents
 //       → InitEvent
@@ -262,6 +262,62 @@ func TestBrain_HandlerPanics(t *testing.T) {
 			t.Errorf("unexpected field %q in log entry", field.Key)
 		}
 	}
+}
+
+func TestBrain_Memory(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	b := NewBrain(logger)
+
+	var events []BrainMemoryEvent
+	b.RegisterHandler(func(evt BrainMemoryEvent) {
+		events = append(events, evt)
+	})
+
+	ctx, closeBrain := context.WithCancel(context.Background())
+	brainClosed := make(chan bool)
+	go func() {
+		b.HandleEvents(ctx)
+		brainClosed <- true
+	}()
+
+	require.NoError(t, b.Set("foo", "bar"))
+	require.NoError(t, b.Set("hello", "world"))
+
+	val, ok, err := b.Get("foo")
+	require.NoError(t, err)
+	assert.True(t, ok)
+	assert.Equal(t, "bar", val)
+
+	mem, err := b.Memories()
+	require.NoError(t, err)
+	assert.Equal(t, map[string]string{"foo": "bar", "hello": "world"}, mem)
+
+	ok, err = b.Delete("hello")
+	require.NoError(t, err)
+	assert.True(t, ok)
+
+	time.Sleep(10 * time.Millisecond)
+
+	closeBrain()
+	<-brainClosed
+
+	/*
+		TODO: This unit test shows yet again that emitting events in goroutines means
+		      that there is no implied order between two emitted events. This is highly
+		      problematic for memory events because the user will expect they are coming
+		      in the order in which they did actually occur. Many events will become useless
+		      at best if we cannot fix this and in the worst case it will produce very unexpected
+		      and hard to detect and thus frustrating bugs in concrete bot implementations.
+	*/
+
+	expectedEvents := []BrainMemoryEvent{
+		{Operation: "set", Key: "foo", Value: "bar"},
+		{Operation: "set", Key: "hello", Value: "world"},
+		{Operation: "get", Key: "foo", Value: "bar"},
+		{Operation: "del", Key: "hello"},
+	}
+
+	assert.Equal(t, expectedEvents, events)
 }
 
 // EmitSync emits the given event on the brain and blocks until it has received

@@ -75,7 +75,7 @@ func NewBrain(logger *zap.Logger) *Brain {
 	return &Brain{
 		logger:   logger,
 		memory:   newInMemory(),
-		events:   make(chan Event, 10),
+		events:   make(chan Event),
 		handlers: make(map[reflect.Type][]eventHandler),
 	}
 }
@@ -146,11 +146,13 @@ func (b *Brain) connectAdapter(a Adapter) {
 }
 
 // Emit sends the first argument as event to the brain from where it is
-// dispatched to all registered handlers.
+// dispatched to all registered handlers. This function blocks until the event
+// handler was started via Brain.HandleEvents(…). When the event handler is
+// running it will return immediately.
+//
+// TODO: do not block when HandleEvents is not yet running
 func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
-	go func() {
-		b.events <- Event{Data: event, Callbacks: callbacks}
-	}()
+	b.events <- Event{Data: event, Callbacks: callbacks}
 }
 
 // HandleEvents starts the event handler loop of the Brain. This function blocks
@@ -160,9 +162,11 @@ func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
 func (b *Brain) HandleEvents(ctx context.Context) {
 	b.handleEvent(ctx, Event{Data: InitEvent{}})
 
+	events := b.consumeEvents(ctx)
+
 	for {
 		select {
-		case evt := <-b.events:
+		case evt := <-events:
 			b.handleEvent(ctx, evt)
 
 		case <-ctx.Done():
@@ -170,6 +174,53 @@ func (b *Brain) HandleEvents(ctx context.Context) {
 			return
 		}
 	}
+}
+
+// consumeEvents continuously reads events from b.events in a new goroutine so
+// emitting an event never blocks on the caller. All events will be returned in
+// the result channel of this function in the same order in which they have been
+// inserted into b.events. In this sense this function provides an events channel
+// with "infinite" capacity.
+func (b *Brain) consumeEvents(ctx context.Context) chan Event {
+	var queue []Event
+	events := make(chan Event)
+
+	outChan := func() chan Event {
+		if len(queue) == 0 {
+			// In case the queue is empty we return a nil channel to disable the
+			// corresponding select case in the goroutine below.
+			return nil
+		}
+
+		return events
+	}
+
+	nextEvt := func() Event {
+		if len(queue) == 0 {
+			// Prevent index out of bounds if there is no next event. Note that
+			// this event is actually never received because the outChan()
+			// function above will return "nil" in this case which disables the
+			// corresponding select case.
+			return Event{}
+		}
+
+		return queue[0]
+	}
+
+	go func() {
+		for {
+			select {
+			case evt := <-b.events:
+				queue = append(queue, evt)
+			case outChan() <- nextEvt(): // disabled if len(queue) == 0
+				queue = queue[1:]
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return events
 }
 
 // handleEvent receives an event and determines which handler it must be

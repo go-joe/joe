@@ -16,8 +16,9 @@ func ExampleBrain_RegisterHandler() {
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
-	b.Emit(CustomEvent{Test: true})
 	go b.HandleEvents(ctx)
+
+	b.Emit(CustomEvent{Test: true})
 
 	<-done
 	cancel()

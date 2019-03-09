@@ -106,7 +106,7 @@ func main() {
 	}
 
 	b.Respond("remember (.+) is (.+)", b.Remember)
-	b.Respond(`what is (.+)`, b.WhatIs)
+	b.Respond("what is (.+)", b.WhatIs)
 
 	err := b.Run()
 	if err != nil {

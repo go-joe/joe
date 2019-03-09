@@ -211,7 +211,9 @@ func (b *Bot) RespondRegex(expr string, fun func(Message) error) {
 
 	regex, err := regexp.Compile(expr)
 	if err != nil {
-		b.Brain.registrationErrs = append(b.Brain.registrationErrs, errors.Wrap(err, "failed to add Response handler"))
+		caller := firstExternalCaller()
+		err = errors.Wrap(err, caller)
+		b.Brain.registrationErrs = append(b.Brain.registrationErrs, err)
 		return
 	}
 

@@ -80,7 +80,8 @@ func (b *TestBot) EmitSync(t TestingT, event interface{}) {
 	case <-done:
 		// ok, cool
 	case <-time.After(time.Second):
-		t.Errorf("timeout")
+		t.Errorf("EmitSync timed out")
+		t.FailNow()
 	}
 }
 

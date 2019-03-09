@@ -198,8 +198,8 @@ func TestBot_RespondRegex_Invalid(t *testing.T) {
 	})
 
 	err := b.Run()
-	require.EqualError(t, err, "invalid event handlers: failed to add Response handler: "+
-		"error parsing regexp: missing closing ]: `[valid regular expression`")
+	require.Error(t, err)
+	require.Regexp(t, `invalid event handlers: .+\.go:\d+: error parsing regexp: missing closing \]`, err.Error())
 }
 
 func TestBot_CloseAdapter(t *testing.T) {
@@ -289,6 +289,49 @@ func TestBot_Say_Error(t *testing.T) {
 	}}, logs.AllUntimed())
 
 	a.AssertExpectations(t)
+}
+
+// TODO: explain what this test is about
+func TestBot_HandlerEvents(t *testing.T) {
+	b := NewTest(t)
+
+	type TestEvent struct {
+		N int
+	}
+
+	var receivedEvents []TestEvent
+	b.Brain.RegisterHandler(func(evt TestEvent) {
+		receivedEvents = append(receivedEvents, evt)
+	})
+
+	msgEvents := 10
+	testEventsPerMsg := 10
+	b.Brain.RegisterHandler(func(ReceiveMessageEvent) {
+		// This test checks that emitting events from within an event handler
+		// does not deadlock the Brain.
+		for i := 0; i < testEventsPerMsg; i++ {
+			// TODO: if we use a callback here, will it then deadlock?
+			b.Brain.Emit(TestEvent{N: i})
+		}
+	})
+
+	b.Start()
+	for i := 0; i < msgEvents; i++ {
+		b.EmitSync(t, ReceiveMessageEvent{})
+	}
+
+	time.Sleep(10 * time.Millisecond) // TODO!!
+	b.Stop()
+
+	require.Equal(t, msgEvents*testEventsPerMsg, len(receivedEvents), "did not receive enough events")
+	for i := 0; i < msgEvents; i++ {
+		for j := 0; j < testEventsPerMsg; j++ {
+			idx := i*testEventsPerMsg + j
+			n := receivedEvents[idx].N
+			require.Equal(t, j, n, "i=%d j=%d", i, j)
+			// t.Logf("OK: %d (i=%d j=%d)", n, i, j)
+		}
+	}
 }
 
 type testCloser struct {
