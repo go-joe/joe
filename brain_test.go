@@ -16,11 +16,9 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-// TODO: test shutdown event context is not already canceled → Brain test
-// TODO: test Brain.Close closes memory
-// TODO: test Brain.Emit is asynchronous
 // TODO: test HandleEvents
 //       → InitEvent
+//       → ShutdownEvent
 //       → multiple handlers can match
 //       → no handlers can match (e.g. wrong EventType)
 //       → first external caller in registration errors
@@ -28,7 +26,6 @@ import (
 //       → callbacks
 //       → timeouts
 //       → context done and shutdown event
-// TODO: BrainMemoryEvents
 
 func TestBrain_RegisterHandler(t *testing.T) {
 	type TestEvent struct {
