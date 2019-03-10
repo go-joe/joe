@@ -1,24 +1,27 @@
 # Contributing
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change. 
+When contributing to this repository, please first discuss the change you wish
+to make via an [issue on Github][issues] *before* making a change. 
 
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+Please note we have a code of conduct. Please follow it in all your interactions
+with the project.
 
 ## Pull Request Process
 
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a 
-   build.
-2. Update the README.md with details of changes to the interface, this includes new environment 
-   variables, exposed ports, useful file locations and container parameters.
-3. Increase the version numbers in any examples files and the README.md to the new version that this
-   Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
-4. You may merge the Pull Request in once you have the sign-off of two other developers, or if you 
-   do not have permission to do that, you may request the second reviewer to merge it for you.
+0. Everything should start with an issue: ["Talk, then code"][talk-code]
+1. Cover all your changes with unit tests, when unsure how, ask for help
+2. Run all unit tests with the race detector on
+3. Run the linters locally via `golangci-lint run`
+4. Update the [CHANGELOG.md](CHANGELOG.md) with the changes you made (in the "Unreleased" section) 
+5. Consider updating the [README.md](README.md) with details of your changes.
+   When in doubt, lets discuss the need together in the corresponding Github issue.
+6. Consider if you have to increase the version numbers in any examples files and
+   the README.md to the new version that this Pull Request would represent.
+   The versioning scheme we use is [SemVer](http://semver.org/).
 
 ## Code of Conduct
 
-We follow the Gopher Code of Conduct as described at https://golang.org/conduct
+We follow the **Gopher Code of Conduct** as described at https://golang.org/conduct `\ʕ◔ϖ◔ʔ/`
 
 ### Our Pledge
 
@@ -90,5 +93,7 @@ where participants feel welcome and safe.
 This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 1.4,
 available at [http://contributor-covenant.org/version/1/4][version]
 
+[issues]: https://github.com/go-joe/joe/issues
+[talk-code]: https://dave.cheney.net/2019/02/18/talk-then-code
 [homepage]: http://contributor-covenant.org
 [version]: http://contributor-covenant.org/version/1/4/

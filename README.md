@@ -1,9 +1,10 @@
 <h1 align="center">Joe Bot</h1>
 <p align="center">A general-purpose bot library inspired by Hubot but written in Go.</p>
 <p align="center">
+	<a href="https://github.com/go-joe/joe/releases"><img src="https://img.shields.io/github/tag/go-joe/joe.svg?label=version&color=brightgreen"></a>
 	<a href="https://circleci.com/gh/go-joe/joe/tree/master"><img src="https://circleci.com/gh/go-joe/joe/tree/master.svg?style=shield"></a>
 	<a href="https://goreportcard.com/report/github.com/go-joe/joe"><img src="https://goreportcard.com/badge/github.com/go-joe/joe"></a>
-	<a href="https://github.com/go-joe/joe/releases"><img src="https://img.shields.io/github/tag/go-joe/joe.svg?label=version&color=brightgreen"></a>
+	<a href="https://codecov.io/gh/go-joe/joe"><img src="https://codecov.io/gh/go-joe/joe/branch/master/graph/badge.svg"/></a>
 	<a href="https://godoc.org/github.com/go-joe/joe"><img src="https://img.shields.io/badge/godoc-reference-blue.svg?color=blue"></a>
 	<a href="https://github.com/go-joe/joe/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-4183c4.svg?color=blue"></a>
 </p>
@@ -73,7 +74,7 @@ corresponding registered _handler_ functions.
 
 By default `joe.New(…)` uses the CLI adapter which makes the bot read messages
 from stdin and respond on stdout. Additionally the brain will store key value
-data in memory which means it will forget anything you told it when it is restarted.
+data in-memory which means it will forget anything you told it when it is restarted.
 This default setup is useful for local development without any dependencies but
 you will quickly want to add other _Modules_ to extend the bots capabilities.
 

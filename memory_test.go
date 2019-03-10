@@ -1,8 +1,3 @@
 package joe
 
-// TODO: test inMemory:
-//       Set(key, value string) error
-// 	     Get(key string) (string, bool, error)
-// 	     Delete(key string) (bool, error)
-// 	     Memories() (map[string]string, error)
-// 	     Close() error
+// The inMemory type is fully tested in brain_test.go via TestBrain_Memory(…).
