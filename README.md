@@ -25,7 +25,7 @@ installation is by adding joe to your `go.mod` file like this:
 module github.com/go-joe/example-bot
 
 require (
-	github.com/go-joe/joe v0.1.0
+	github.com/go-joe/joe v0.2.0
 	…
 )
 ```
