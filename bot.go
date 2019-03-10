@@ -171,10 +171,15 @@ func (b *Bot) Run() error {
 	b.Logger.Info("Bot initialized and ready to operate", zap.String("name", b.Name))
 	b.Brain.HandleEvents()
 
-	err := b.Adapter.Close()
 	b.Logger.Info("Bot is shutting down", zap.String("name", b.Name))
+	err := b.Adapter.Close()
 	if err != nil {
 		b.Logger.Info("Error while closing adapter", zap.Error(err))
+	}
+
+	err = b.Brain.memory.Close()
+	if err != nil {
+		b.Logger.Info("Error while closing memory", zap.Error(err))
 	}
 
 	return nil

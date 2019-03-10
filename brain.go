@@ -113,7 +113,9 @@ func (b *Brain) isClosed() bool {
 //     type CustomEvent struct {}
 //
 //     b := NewBrain(nil)
-//     b.RegisterHandler(func(
+//     b.RegisterHandler(func(evt CustomEvent) {
+//         // TODO
+//     })
 func (b *Brain) RegisterHandler(fun interface{}) {
 	err := b.registerHandler(fun)
 	if err != nil {

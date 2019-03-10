@@ -73,7 +73,7 @@ corresponding registered _handler_ functions.
 
 By default `joe.New(…)` uses the CLI adapter which makes the bot read messages
 from stdin and respond on stdout. Additionally the brain will store key value
-data in memory which means it will forget anything you told it when it is restarted.
+data in-memory which means it will forget anything you told it when it is restarted.
 This default setup is useful for local development without any dependencies but
 you will quickly want to add other _Modules_ to extend the bots capabilities.
 
