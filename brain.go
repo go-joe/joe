@@ -145,7 +145,10 @@ func (b *Brain) registerHandler(fun interface{}) error {
 // running it will return immediately.
 func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
 	if b.isClosed() {
-		b.logger.Debug("Ignoring event because brain was already shut down")
+		b.logger.Debug(
+			"Ignoring new event because brain is currently shutting down or is already closed",
+			zap.String("type", fmt.Sprintf("%T", event)),
+		)
 		return
 	}
 
@@ -153,7 +156,7 @@ func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
 }
 
 // HandleEvents starts the event handler loop of the Brain. This function blocks
-// until Brain.Shutdown() is canceled.
+// until Brain.Shutdown() is called and returned.
 func (b *Brain) HandleEvents() {
 	if b.isClosed() {
 		b.logger.Error("HandleEvents failed because bot is already closed")

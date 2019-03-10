@@ -16,17 +16,6 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-// TODO: test HandleEvents
-//       → InitEvent
-//       → ShutdownEvent
-//       → multiple handlers can match
-//       → no handlers can match (e.g. wrong EventType)
-//       → first external caller in registration errors
-//       → passed context
-//       → callbacks
-//       → timeouts
-//       → context done and shutdown event
-
 func TestBrain_RegisterHandler(t *testing.T) {
 	type TestEvent struct {
 		EventHandled *sync.WaitGroup
@@ -303,9 +292,6 @@ func TestBrain_Shutdown_WithoutStart(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("timeout")
 	}
-
-	// Emitting new events after shutdown should not block or panic
-	b.Emit(ReceiveMessageEvent{Text: "XXX"})
 }
 
 func TestBrain_Shutdown_MultipleTimes(t *testing.T) {
@@ -329,6 +315,37 @@ func TestBrain_Shutdown_MultipleTimes(t *testing.T) {
 			// hurray!
 		case <-time.After(time.Second):
 			t.Fatal("timeout")
+		}
+	}
+}
+
+func TestBrain_EmitAfterShutdown(t *testing.T) {
+	obs, logs := observer.New(zap.DebugLevel)
+	logger := zap.New(obs)
+	b := NewBrain(logger)
+
+	b.Shutdown()
+
+	// Emitting new events after shutdown should not block or panic
+	type TestEvent struct{}
+
+	b.Emit(ReceiveMessageEvent{})
+	b.Emit(UserTypingEvent{})
+	b.Emit(TestEvent{})
+
+	all := logs.AllUntimed()
+	require.Len(t, all, 3)
+	for i, logEvent := range all {
+		assert.Equal(t, "Ignoring new event because brain is currently shutting down or is already closed", logEvent.Message)
+		require.Len(t, logEvent.Context, 1)
+		assert.Equal(t, "type", logEvent.Context[0].Key)
+		switch i {
+		case 0:
+			assert.Equal(t, "joe.ReceiveMessageEvent", logEvent.Context[0].String)
+		case 1:
+			assert.Equal(t, "joe.UserTypingEvent", logEvent.Context[0].String)
+		case 2:
+			assert.Equal(t, "joe.TestEvent", logEvent.Context[0].String)
 		}
 	}
 }
