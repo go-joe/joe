@@ -133,6 +133,7 @@ func newBot(ctx context.Context, logger *zap.Logger, name string, modules ...Mod
 
 	// apply all configuration options
 	brain.handlerTimeout = conf.HandlerTimeout
+
 	return &Bot{
 		Name:    conf.Name,
 		ctx:     conf.Context,
@@ -157,10 +158,18 @@ func (b *Bot) Run() error {
 		return errors.Wrap(errs, "invalid event handlers")
 	}
 
-	b.Brain.connectAdapter(b.Adapter)
+	b.Adapter.RegisterAt(b.Brain)
+
+	go func() {
+		// Keep running until the context is canceled via SIGINT.
+		<-b.ctx.Done() // TODO: improve this a bit
+
+		shutdownCtx := cliContext() // closed upon another SIGINT
+		b.Brain.Shutdown(shutdownCtx)
+	}()
 
 	b.Logger.Info("Bot initialized and ready to operate", zap.String("name", b.Name))
-	b.Brain.HandleEvents(b.ctx)
+	b.Brain.HandleEvents()
 
 	err := b.Adapter.Close()
 	b.Logger.Info("Bot is shutting down", zap.String("name", b.Name))
@@ -211,7 +220,9 @@ func (b *Bot) RespondRegex(expr string, fun func(Message) error) {
 
 	regex, err := regexp.Compile(expr)
 	if err != nil {
-		b.Brain.registrationErrs = append(b.Brain.registrationErrs, errors.Wrap(err, "failed to add Response handler"))
+		caller := firstExternalCaller()
+		err = errors.Wrap(err, caller)
+		b.Brain.registrationErrs = append(b.Brain.registrationErrs, err)
 		return
 	}
 

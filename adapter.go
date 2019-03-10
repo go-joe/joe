@@ -19,7 +19,7 @@ import (
 // Joe provides a default CLIAdapter implementation which connects the bot with
 // the local shell to receive messages from stdin and print messages to stdout.
 type Adapter interface {
-	Register(EventRegistry)
+	RegisterAt(*Brain)
 	Send(text, channel string) error
 	Close() error
 }
@@ -48,33 +48,24 @@ func NewCLIAdapter(name string, logger *zap.Logger) *CLIAdapter {
 	}
 }
 
-// Register starts the CLIAdapter by reading messages from stdin and emitting a
-// ReceiveMessageEvent for each of them. Additionally the adapter hooks into the
-// InitEvent to print a nice prefix to stdout to show to the user it is ready to
-// accept input.
-func (a *CLIAdapter) Register(events EventRegistry) {
-	events.RegisterHandler(func(evt InitEvent) {
+// RegisterAt starts the CLIAdapter by reading messages from stdin and emitting
+// a ReceiveMessageEvent for each of them. Additionally the adapter hooks into
+// the InitEvent to print a nice prefix to stdout to show to the user it is
+// ready to accept input.
+func (a *CLIAdapter) RegisterAt(brain *Brain) {
+	brain.RegisterHandler(func(evt InitEvent) {
 		_ = a.print(a.Prefix)
 	})
 
-	go a.loop(events.Channel())
+	go a.loop(brain)
 }
 
-func (a *CLIAdapter) loop(events chan<- Event) {
+func (a *CLIAdapter) loop(brain *Brain) {
 	input := a.readLines()
 
 	// The adapter loop is built to stay responsive even if the Brain stops
-	// processing events so we can safely close the CLIAdapter. This makes the
-	// adapter deterministic and easy to test. Message events are always
-	// delivered in the correct order and the callback at the very end happens
-	// before we process the next input line.
-
-	var (
-		lines = input      // channel represents the case that we receive a new message
-		emit  chan<- Event // channel to activate the case that the event was delivered
-		evt   Event        // the event to deliver (if any)
-	)
-
+	// processing events so we can safely close the CLIAdapter.
+	//
 	// We want to print the prefix each time when the Brain has completely
 	// processed a ReceiveMessageEvent and before we are emitting the next one.
 	// This gives us a shell-like behavior which signals to the user that she
@@ -85,6 +76,8 @@ func (a *CLIAdapter) loop(events chan<- Event) {
 		callback <- evt
 	}
 
+	var lines = input // channel represents the case that we receive a new message
+
 	for {
 		select {
 		case msg, ok := <-lines:
@@ -94,14 +87,8 @@ func (a *CLIAdapter) loop(events chan<- Event) {
 				continue
 			}
 
-			lines = nil   // disable this case
-			emit = events // enable the event delivery case
-			evt = Event{Data: ReceiveMessageEvent{Text: msg}}
-			evt.Callbacks = append(evt.Callbacks, callbackFun)
-
-		case emit <- evt:
-			emit = nil    // disable this case
-			evt = Event{} // release old event data
+			lines = nil // disable this case and wait for the callback
+			brain.Emit(ReceiveMessageEvent{Text: msg}, callbackFun)
 
 		case <-callback:
 			// This case is executed after all ReceiveMessageEvent handlers have

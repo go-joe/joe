@@ -19,6 +19,7 @@ type TestingT interface {
 	Failed() bool
 	Name() string
 	FailNow()
+	Helper()
 }
 
 // TestBot wraps a *Bot for unit tests.
@@ -28,7 +29,6 @@ type TestBot struct {
 	Input  io.Writer
 	Output io.Reader
 
-	stop   func()
 	runErr chan error
 }
 
@@ -40,6 +40,7 @@ type TestBot struct {
 // For ease of testing a TestBot can be started and stopped without a cancel via
 // TestBot.Start() and TestBot.Stop().
 func NewTest(t TestingT, modules ...Module) *TestBot {
+	ctx := context.Background()
 	logger := zaptest.NewLogger(t)
 	input := new(bytes.Buffer)
 	output := new(bytes.Buffer)
@@ -50,9 +51,6 @@ func NewTest(t TestingT, modules ...Module) *TestBot {
 		Output: output,
 		runErr: make(chan error, 1), // buffered so we can return from Bot.Run without blocking
 	}
-
-	ctx := context.Background()
-	ctx, b.stop = context.WithCancel(ctx)
 
 	testAdapter := func(conf *Config) error {
 		a := NewCLIAdapter("test", conf.Logger("adapter"))
@@ -71,7 +69,9 @@ func NewTest(t TestingT, modules ...Module) *TestBot {
 
 // EmitSync emits the given event on the Brain and blocks until all registered
 // handlers have completely processed it.
-func (b *TestBot) EmitSync(t TestingT, event interface{}) {
+func (b *TestBot) EmitSync(event interface{}) {
+	b.T.Helper()
+
 	done := make(chan bool)
 	callback := func(Event) { done <- true }
 	b.Brain.Emit(event, callback)
@@ -80,22 +80,33 @@ func (b *TestBot) EmitSync(t TestingT, event interface{}) {
 	case <-done:
 		// ok, cool
 	case <-time.After(time.Second):
-		t.Errorf("timeout")
+		b.T.Errorf("EmitSync timed out")
+		b.T.FailNow()
 	}
 }
 
 // Start executes the Bot.Run() function and stores its error result in a channel
 // so the caller can eventually execute TestBot.Stop() and receive the result.
+// This function blocks until the event handler is actually running and emits
+// the InitEvent.
 func (b *TestBot) Start() {
+	started := make(chan bool)
+	b.Brain.RegisterHandler(func(evt InitEvent) {
+		started <- true
+	})
+
 	go func() {
 		// The error will be available by calling TestBot.Stop()
 		_ = b.Run()
 	}()
+
+	<-started
 }
 
 // Run wraps Bot.Run() in order to allow stopping a TestBot without having to
 // inject another context.
 func (b *TestBot) Run() error {
+	b.T.Helper()
 	err := b.Bot.Run()
 	b.runErr <- err // b.runErr is buffered so we can return immediately
 	return err
@@ -105,7 +116,8 @@ func (b *TestBot) Run() error {
 // returned an error it is passed to the Errorf function of the TestingT that
 // was used to create the TestBot.
 func (b *TestBot) Stop() {
-	b.stop()
+	ctx := context.Background()
+	b.Brain.Shutdown(ctx)
 	err := <-b.runErr
 	if err != nil {
 		b.T.Errorf("Bot.Run() returned an error: %v", err)

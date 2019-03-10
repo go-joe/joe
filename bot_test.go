@@ -35,7 +35,7 @@ func TestBot_Run(t *testing.T) {
 	}()
 
 	wait(t, initEvt)
-	b.Stop()
+	go b.Stop()
 
 	wait(t, shutdownEvt)
 	wait(t, runExit)
@@ -118,7 +118,7 @@ func TestBot_Respond_No_Matches(t *testing.T) {
 	defer b.Stop()
 
 	for _, txt := range nonMatches {
-		b.EmitSync(t, ReceiveMessageEvent{Text: txt})
+		b.EmitSync(ReceiveMessageEvent{Text: txt})
 	}
 }
 
@@ -143,7 +143,7 @@ func TestBot_RespondRegex(t *testing.T) {
 	}
 
 	for input, matches := range cases {
-		b.EmitSync(t, ReceiveMessageEvent{Text: input})
+		b.EmitSync(ReceiveMessageEvent{Text: input})
 
 		if matches == nil {
 			select {
@@ -186,7 +186,7 @@ func TestBot_RespondRegex_Empty(t *testing.T) {
 	}
 
 	for _, input := range cases {
-		b.EmitSync(t, ReceiveMessageEvent{Text: input})
+		b.EmitSync(ReceiveMessageEvent{Text: input})
 	}
 }
 
@@ -198,8 +198,8 @@ func TestBot_RespondRegex_Invalid(t *testing.T) {
 	})
 
 	err := b.Run()
-	require.EqualError(t, err, "invalid event handlers: failed to add Response handler: "+
-		"error parsing regexp: missing closing ]: `[valid regular expression`")
+	require.Error(t, err)
+	require.Regexp(t, `invalid event handlers: .+\.go:\d+: error parsing regexp: missing closing \]`, err.Error())
 }
 
 func TestBot_CloseAdapter(t *testing.T) {
@@ -291,6 +291,47 @@ func TestBot_Say_Error(t *testing.T) {
 	a.AssertExpectations(t)
 }
 
+// TestBot_HandlerEvents tests if event handler functions can safely (i.e. without
+// deadlock or panic) emit new events.
+func TestBot_HandlerEvents(t *testing.T) {
+	b := NewTest(t)
+
+	type TestEvent struct {
+		N int
+	}
+
+	var receivedEvents []TestEvent
+	b.Brain.RegisterHandler(func(evt TestEvent) {
+		receivedEvents = append(receivedEvents, evt)
+	})
+
+	msgEvents := 10
+	testEventsPerMsg := 10
+	b.Brain.RegisterHandler(func(ReceiveMessageEvent) {
+		// This test checks that emitting events from within an event handler
+		// does not deadlock the Brain.
+		for i := 0; i < testEventsPerMsg; i++ {
+			// TODO: if we use a callback here, will it then deadlock?
+			b.Brain.Emit(TestEvent{N: i})
+		}
+	})
+
+	b.Start()
+	for i := 0; i < msgEvents; i++ {
+		b.EmitSync(ReceiveMessageEvent{})
+	}
+	b.Stop() // should block until all events have been processed
+
+	require.Equal(t, msgEvents*testEventsPerMsg, len(receivedEvents), "did not receive enough events")
+	for i := 0; i < msgEvents; i++ {
+		for j := 0; j < testEventsPerMsg; j++ {
+			idx := i*testEventsPerMsg + j
+			n := receivedEvents[idx].N
+			require.Equal(t, j, n, "i=%d j=%d", i, j)
+		}
+	}
+}
+
 type testCloser struct {
 	Closed bool
 	io.Reader
@@ -314,8 +355,8 @@ type MockAdapter struct {
 	mock.Mock
 }
 
-func (a *MockAdapter) Register(r EventRegistry) {
-	a.Called(r)
+func (a *MockAdapter) RegisterAt(b *Brain) {
+	a.Called(b)
 }
 
 func (a *MockAdapter) Send(text, channel string) error {
