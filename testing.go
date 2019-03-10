@@ -19,6 +19,7 @@ type TestingT interface {
 	Failed() bool
 	Name() string
 	FailNow()
+	Helper()
 }
 
 // TestBot wraps a *Bot for unit tests.
@@ -68,7 +69,9 @@ func NewTest(t TestingT, modules ...Module) *TestBot {
 
 // EmitSync emits the given event on the Brain and blocks until all registered
 // handlers have completely processed it.
-func (b *TestBot) EmitSync(t TestingT, event interface{}) {
+func (b *TestBot) EmitSync(event interface{}) {
+	b.T.Helper()
+
 	done := make(chan bool)
 	callback := func(Event) { done <- true }
 	b.Brain.Emit(event, callback)
@@ -77,23 +80,33 @@ func (b *TestBot) EmitSync(t TestingT, event interface{}) {
 	case <-done:
 		// ok, cool
 	case <-time.After(time.Second):
-		t.Errorf("EmitSync timed out")
-		t.FailNow()
+		b.T.Errorf("EmitSync timed out")
+		b.T.FailNow()
 	}
 }
 
 // Start executes the Bot.Run() function and stores its error result in a channel
 // so the caller can eventually execute TestBot.Stop() and receive the result.
+// This function blocks until the event handler is actually running and emits
+// the InitEvent.
 func (b *TestBot) Start() {
+	started := make(chan bool)
+	b.Brain.RegisterHandler(func(evt InitEvent) {
+		started <- true
+	})
+
 	go func() {
 		// The error will be available by calling TestBot.Stop()
 		_ = b.Run()
 	}()
+
+	<-started
 }
 
 // Run wraps Bot.Run() in order to allow stopping a TestBot without having to
 // inject another context.
 func (b *TestBot) Run() error {
+	b.T.Helper()
 	err := b.Bot.Run()
 	b.runErr <- err // b.runErr is buffered so we can return immediately
 	return err

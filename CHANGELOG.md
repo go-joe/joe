@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All pending events are now processed before the brain event loop returns
 - Replace context argument from `Brain.HandleEvents()` with new `Brain.Shutdown()` function
 - `Adapter` interface was simplified again to directly use the `Brain`
+- Remove unnecessary `t` argument from `TestBot.EmitSync(…)` function
 
 ### Removed
 - Deleted `Brain.Close()` because it was not actually meant to be used to close the brain and is thus confusing

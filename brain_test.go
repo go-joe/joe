@@ -287,6 +287,52 @@ func TestBrain_Memory(t *testing.T) {
 	assert.Equal(t, expectedEvents, events)
 }
 
+func TestBrain_Shutdown_WithoutStart(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	b := NewBrain(logger)
+
+	done := make(chan bool)
+	go func() {
+		b.Shutdown()
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		// hurray!
+	case <-time.After(time.Second):
+		t.Fatal("timeout")
+	}
+
+	// Emitting new events after shutdown should not block or panic
+	b.Emit(ReceiveMessageEvent{Text: "XXX"})
+}
+
+func TestBrain_Shutdown_MultipleTimes(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	b := NewBrain(logger)
+
+	n := 100
+	done := make(chan bool, n)
+	for i := 0; i < n; i++ {
+		go func() {
+			b.Shutdown()
+			done <- true
+		}()
+	}
+
+	// All shutdown functions should return and nothing should deadlock or cause
+	// a panic (e.g. closing channels twice).
+	for i := 0; i < n; i++ {
+		select {
+		case <-done:
+			// hurray!
+		case <-time.After(time.Second):
+			t.Fatal("timeout")
+		}
+	}
+}
+
 // EmitSync emits the given event on the brain and blocks until it has received
 // the context which indicates that the event was fully processed by all
 // matching handlers.

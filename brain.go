@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -30,6 +31,8 @@ type Brain struct {
 	handlers map[reflect.Type][]eventHandler
 
 	registrationErrs []error // any errors that occurred during setup (e.g. in Bot.RegisterHandler)
+	handlingEvents   int32   // accessed atomically (non-zero means the event handler was started)
+	closed           int32   // accessed atomically (non-zero means the brain was shutdown already)
 }
 
 // An Event represents a concrete event type and optional callbacks that are
@@ -65,6 +68,14 @@ func NewBrain(logger *zap.Logger) *Brain {
 	b.consumeEvents()
 
 	return b
+}
+
+func (b *Brain) isHandlingEvents() bool {
+	return atomic.LoadInt32(&b.handlingEvents) == 1
+}
+
+func (b *Brain) isClosed() bool {
+	return atomic.LoadInt32(&b.closed) == 1
 }
 
 // RegisterHandler registers a function to be executed when a specific event is
@@ -130,16 +141,26 @@ func (b *Brain) registerHandler(fun interface{}) error {
 
 // Emit sends the first argument as event to the brain from where it is
 // dispatched to all registered handlers. This function blocks until the event
-// handler was started via Brain.HandleEvents(…). When the event handler is
+// handler was started via Brain.HandleEvents(). When the event handler is
 // running it will return immediately.
 func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
-	// TODO: do not panic if Brain is already shutting down
+	if b.isClosed() {
+		b.logger.Debug("Ignoring event because brain was already shut down")
+		return
+	}
+
 	b.eventsInput <- Event{Data: event, Callbacks: callbacks}
 }
 
 // HandleEvents starts the event handler loop of the Brain. This function blocks
 // until Brain.Shutdown() is canceled.
 func (b *Brain) HandleEvents() {
+	if b.isClosed() {
+		b.logger.Error("HandleEvents failed because bot is already closed")
+		return
+	}
+
+	atomic.StoreInt32(&b.handlingEvents, 1)
 	b.handleEvent(Event{Data: InitEvent{}})
 
 	var shutdownCallback chan bool // set when Brain.Shutdown() is called
@@ -165,6 +186,7 @@ func (b *Brain) HandleEvents() {
 			// done it will close the events loop channel and the case above will
 			// use the shutdown callback and return from this function.
 			close(b.eventsInput)
+			atomic.StoreInt32(&b.handlingEvents, 0)
 		}
 	}
 }
@@ -301,7 +323,23 @@ func (b *Brain) Memories() (map[string]string, error) {
 // events have been processed. After the brain is shutdown, it will no longer
 // accept new events.
 func (b *Brain) Shutdown() {
-	// TODO: do not block if Brain was not yet started (unit test)
+	closing := atomic.CompareAndSwapInt32(&b.closed, 0, 1)
+	if !closing {
+		// brain is already shutting down
+		return
+	}
+
+	// If the event handler loop is not running we must close the inputs channel
+	// from here and drain all pending requests in order to make b.consumeEvents()
+	// exit.
+	if !b.isHandlingEvents() {
+		close(b.eventsInput)
+		for range b.eventsLoop {
+			// read all pending events so we also exit the consumeEvents goroutine
+		}
+		return
+	}
+
 	callback := make(chan bool)
 	b.shutdown <- callback
 	<-callback

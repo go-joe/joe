@@ -118,7 +118,7 @@ func TestBot_Respond_No_Matches(t *testing.T) {
 	defer b.Stop()
 
 	for _, txt := range nonMatches {
-		b.EmitSync(t, ReceiveMessageEvent{Text: txt})
+		b.EmitSync(ReceiveMessageEvent{Text: txt})
 	}
 }
 
@@ -143,7 +143,7 @@ func TestBot_RespondRegex(t *testing.T) {
 	}
 
 	for input, matches := range cases {
-		b.EmitSync(t, ReceiveMessageEvent{Text: input})
+		b.EmitSync(ReceiveMessageEvent{Text: input})
 
 		if matches == nil {
 			select {
@@ -186,7 +186,7 @@ func TestBot_RespondRegex_Empty(t *testing.T) {
 	}
 
 	for _, input := range cases {
-		b.EmitSync(t, ReceiveMessageEvent{Text: input})
+		b.EmitSync(ReceiveMessageEvent{Text: input})
 	}
 }
 
@@ -318,7 +318,7 @@ func TestBot_HandlerEvents(t *testing.T) {
 
 	b.Start()
 	for i := 0; i < msgEvents; i++ {
-		b.EmitSync(t, ReceiveMessageEvent{})
+		b.EmitSync(ReceiveMessageEvent{})
 	}
 	b.Stop() // should block until all events have been processed
 
