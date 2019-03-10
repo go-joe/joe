@@ -2,6 +2,7 @@ package joe
 
 import (
 	"context"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -10,8 +11,9 @@ import (
 // in a Module. Some configuration settings such as the Logger are read only can
 // only be accessed via the corresponding getter function of the Config.
 type Config struct {
-	Context context.Context
-	Name    string
+	Context        context.Context
+	Name           string
+	HandlerTimeout time.Duration
 
 	logger  *zap.Logger
 	brain   *Brain
@@ -55,6 +57,15 @@ func (c *Config) RegisterHandler(fun interface{}) {
 func WithContext(ctx context.Context) Module {
 	return func(conf *Config) error {
 		conf.Context = ctx
+		return nil
+	}
+}
+
+// WithHandlerTimeout is an option to set a timeout on event handlers functions.
+// By default no timeout is enforced.
+func WithHandlerTimeout(timeout time.Duration) Module {
+	return func(conf *Config) error {
+		conf.HandlerTimeout = timeout
 		return nil
 	}
 }

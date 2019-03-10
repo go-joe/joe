@@ -21,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Deleted `Brain.Close()` because it was not actually meant to be used to close the brain and is thus confusing
-- Delete `WithHandlerTimeout(…)` option because its unclear how and when to use it exactly
 
 ## [v0.1.0] - 2019-03-03
 

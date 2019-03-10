@@ -116,7 +116,8 @@ func (b *TestBot) Run() error {
 // returned an error it is passed to the Errorf function of the TestingT that
 // was used to create the TestBot.
 func (b *TestBot) Stop() {
-	b.Brain.Shutdown()
+	ctx := context.Background()
+	b.Brain.Shutdown(ctx)
 	err := <-b.runErr
 	if err != nil {
 		b.T.Errorf("Bot.Run() returned an error: %v", err)

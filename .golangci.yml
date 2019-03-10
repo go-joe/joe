@@ -57,6 +57,11 @@ issues:
       linters:
         - scopelint
 
+    - text: "`ctx` is a global variable"
+      path: ".+_test\\.go"
+      linters:
+        - gochecknoglobals
+
     - text: "`t` can be `(github.com/go-joe/joe/vendor/)?github.com/stretchr/testify/(assert|require).TestingT`"
       linters:
         - interfacer

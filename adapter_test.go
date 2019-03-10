@@ -44,7 +44,7 @@ func TestCLIAdapter_Register(t *testing.T) {
 	assert.Equal(t, "World", msg2.Text)
 
 	// Stop the brain to make sure we are done with all callbacks
-	brain.Shutdown()
+	brain.Shutdown(ctx)
 
 	// Close the adapter to finish up the test
 	assert.NoError(t, a.Close())

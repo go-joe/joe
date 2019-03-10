@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -26,9 +27,10 @@ type Brain struct {
 
 	eventsInput chan Event // input for any new events, the Brain ensures that callers never block when writing to it
 	eventsLoop  chan Event // used in Brain.HandleEvents() to actually process the events
-	shutdown    chan chan bool
+	shutdown    chan shutdownRequest
 
-	handlers map[reflect.Type][]eventHandler
+	handlers       map[reflect.Type][]eventHandler
+	handlerTimeout time.Duration // zero means no timeout, defaults to one minute
 
 	registrationErrs []error // any errors that occurred during setup (e.g. in Bot.RegisterHandler)
 	handlingEvents   int32   // accessed atomically (non-zero means the event handler was started)
@@ -42,7 +44,14 @@ type Event struct {
 	Callbacks []func(Event)
 }
 
-// An event handler is a function that takes a context and the reflected value
+// The shutdownRequest type is used when signaling shutdown information between
+// Brain.Shutdown() and the Brain.HandleEvents loop.
+type shutdownRequest struct {
+	ctx      context.Context
+	callback chan bool
+}
+
+// An eventHandler is a function that takes a context and the reflected value
 // of a concrete event type.
 type eventHandler func(context.Context, reflect.Value) error
 
@@ -57,12 +66,13 @@ func NewBrain(logger *zap.Logger) *Brain {
 	}
 
 	b := &Brain{
-		logger:      logger,
-		memory:      newInMemory(),
-		eventsInput: make(chan Event),
-		eventsLoop:  make(chan Event),
-		shutdown:    make(chan chan bool),
-		handlers:    make(map[reflect.Type][]eventHandler),
+		logger:         logger,
+		memory:         newInMemory(),
+		eventsInput:    make(chan Event),
+		eventsLoop:     make(chan Event),
+		shutdown:       make(chan shutdownRequest),
+		handlers:       make(map[reflect.Type][]eventHandler),
+		handlerTimeout: time.Minute,
 	}
 
 	b.consumeEvents()
@@ -163,10 +173,11 @@ func (b *Brain) HandleEvents() {
 		return
 	}
 
-	atomic.StoreInt32(&b.handlingEvents, 1)
-	b.handleEvent(Event{Data: InitEvent{}})
+	ctx := context.Background()
+	var shutdown shutdownRequest // set when Brain.Shutdown() is called
 
-	var shutdownCallback chan bool // set when Brain.Shutdown() is called
+	atomic.StoreInt32(&b.handlingEvents, 1)
+	b.handleEvent(ctx, Event{Data: InitEvent{}})
 
 	for {
 		select {
@@ -175,19 +186,20 @@ func (b *Brain) HandleEvents() {
 				// Brain.consumeEvents() is done processing all remaining events
 				// and we can now safely shutdown the event handler, knowing that
 				// all pending events have been processed.
-				b.handleEvent(Event{Data: ShutdownEvent{}})
-				shutdownCallback <- true
+				b.handleEvent(ctx, Event{Data: ShutdownEvent{}})
+				shutdown.callback <- true
 				return
 			}
 
-			b.handleEvent(evt)
+			b.handleEvent(ctx, evt)
 
-		case shutdownCallback = <-b.shutdown:
+		case shutdown = <-b.shutdown:
 			// The Brain is shutting down. We have to close the input channel so
 			// we doe no longer accept new events and only process the remaining
 			// pending events. When the goroutine of Brain.consumeEvents() is
 			// done it will close the events loop channel and the case above will
 			// use the shutdown callback and return from this function.
+			ctx = shutdown.ctx
 			close(b.eventsInput)
 			atomic.StoreInt32(&b.handlingEvents, 0)
 		}
@@ -252,7 +264,7 @@ func (b *Brain) consumeEvents() {
 // handleEvent receives an event and dispatches it to all registered handlers
 // using the reflect API. When all applicable handlers are called (maybe none)
 // the function runs all event callbacks.
-func (b *Brain) handleEvent(evt Event) {
+func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 	event := reflect.ValueOf(evt.Data)
 	typ := event.Type()
 	b.logger.Debug("Handling new event",
@@ -260,9 +272,8 @@ func (b *Brain) handleEvent(evt Event) {
 		zap.Int("handlers", len(b.handlers[typ])),
 	)
 
-	ctx := context.TODO() // TODO, what do we want here?
 	for _, handler := range b.handlers[typ] {
-		err := handler(ctx, event)
+		err := b.executeEventHandler(ctx, handler, event)
 		if err != nil {
 			b.logger.Error("Event handler failed",
 				// TODO: somehow log the name of the handler
@@ -274,6 +285,70 @@ func (b *Brain) handleEvent(evt Event) {
 	for _, callback := range evt.Callbacks {
 		callback(evt)
 	}
+}
+
+func (b *Brain) executeEventHandler(ctx context.Context, handler eventHandler, event reflect.Value) error {
+	if b.handlerTimeout > 0 {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, b.handlerTimeout)
+		defer cancel()
+	}
+
+	done := make(chan error)
+	go func() {
+		done <- handler(ctx, event)
+	}()
+
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// Shutdown stops event handler loop of the Brain and waits until all pending
+// events have been processed. After the brain is shutdown, it will no longer
+// accept new events. The passed context can be used to stop waiting for any
+// pending events or handlers and instead exit immediately (e.g. after a timeout
+// or a second SIGTERM).
+func (b *Brain) Shutdown(ctx context.Context) {
+	closing := atomic.CompareAndSwapInt32(&b.closed, 0, 1)
+	if !closing {
+		// brain is already shutting down
+		return
+	}
+
+	if !b.isHandlingEvents() {
+		// If the event handler loop is not running we must close the inputs
+		// channel from here and drain all pending requests in order to make
+		// b.consumeEvents() exit.
+		close(b.eventsInput)
+		for {
+			select {
+			case _, ok := <-b.eventsLoop:
+				if !ok {
+					// The eventsLoop channel is closed in b.consumeEvents after
+					// all pending messages have been written to it.
+					return
+				}
+			case <-ctx.Done():
+				// shutdown context is expired so we return without waiting for
+				// any pending events.
+				return
+			}
+		}
+	}
+
+	// If we got here then the event handler loop is running and we delegate
+	// proper cleanup and processing of pending messages over there.
+	req := shutdownRequest{
+		ctx:      ctx,
+		callback: make(chan bool),
+	}
+
+	b.shutdown <- req
+	<-req.callback
 }
 
 // Set is a wrapper around the Brains Memory.Set function to allow concurrent
@@ -320,32 +395,6 @@ func (b *Brain) Memories() (map[string]string, error) {
 	b.mu.RUnlock()
 
 	return data, err
-}
-
-// Shutdown stops event handler loop of the Brain and waits until all pending
-// events have been processed. After the brain is shutdown, it will no longer
-// accept new events.
-func (b *Brain) Shutdown() {
-	closing := atomic.CompareAndSwapInt32(&b.closed, 0, 1)
-	if !closing {
-		// brain is already shutting down
-		return
-	}
-
-	// If the event handler loop is not running we must close the inputs channel
-	// from here and drain all pending requests in order to make b.consumeEvents()
-	// exit.
-	if !b.isHandlingEvents() {
-		close(b.eventsInput)
-		for range b.eventsLoop {
-			// read all pending events so we also exit the consumeEvents goroutine
-		}
-		return
-	}
-
-	callback := make(chan bool)
-	b.shutdown <- callback
-	<-callback
 }
 
 func checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withContext bool, err error) {

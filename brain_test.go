@@ -16,6 +16,8 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
+var ctx = context.Background() // default background context
+
 func TestBrain_RegisterHandler(t *testing.T) {
 	type TestEvent struct {
 		EventHandled *sync.WaitGroup
@@ -101,7 +103,7 @@ func TestBrain_RegisterHandler(t *testing.T) {
 
 			// Start the brains event handler loop.
 			go b.HandleEvents()
-			defer b.Shutdown()
+			defer b.Shutdown(ctx)
 
 			// Emit our test event.
 			wg := new(sync.WaitGroup)
@@ -141,7 +143,7 @@ func TestBrain_HandlerErrors(t *testing.T) {
 	})
 
 	go b.HandleEvents()
-	defer b.Shutdown()
+	defer b.Shutdown(ctx)
 
 	EmitSync(b, TestEvent{})
 
@@ -170,7 +172,7 @@ func TestBrain_Emit_PassAllEventData(t *testing.T) {
 	})
 
 	go b.HandleEvents()
-	defer b.Shutdown()
+	defer b.Shutdown(ctx)
 
 	event := TestEvent{Test: true, unexported: "hello"}
 	EmitSync(b, event)
@@ -191,7 +193,7 @@ func TestBrain_Emit_ImmutableEvent(t *testing.T) {
 	})
 
 	go b.HandleEvents()
-	defer b.Shutdown()
+	defer b.Shutdown(ctx)
 
 	event := TestEvent{String: "foo"}
 	EmitSync(b, event)
@@ -215,7 +217,7 @@ func TestBrain_HandlerPanics(t *testing.T) {
 	})
 
 	go b.HandleEvents()
-	defer b.Shutdown()
+	defer b.Shutdown(ctx)
 
 	EmitSync(b, TestEvent{})
 	assert.True(t, handlerCalled)
@@ -264,7 +266,7 @@ func TestBrain_Memory(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ok)
 
-	b.Shutdown()
+	b.Shutdown(ctx)
 
 	expectedEvents := []BrainMemoryEvent{
 		{Operation: "set", Key: "foo", Value: "bar"},
@@ -282,7 +284,7 @@ func TestBrain_Shutdown_WithoutStart(t *testing.T) {
 
 	done := make(chan bool)
 	go func() {
-		b.Shutdown()
+		b.Shutdown(ctx)
 		done <- true
 	}()
 
@@ -302,7 +304,7 @@ func TestBrain_Shutdown_MultipleTimes(t *testing.T) {
 	done := make(chan bool, n)
 	for i := 0; i < n; i++ {
 		go func() {
-			b.Shutdown()
+			b.Shutdown(ctx)
 			done <- true
 		}()
 	}
@@ -324,7 +326,7 @@ func TestBrain_EmitAfterShutdown(t *testing.T) {
 	logger := zap.New(obs)
 	b := NewBrain(logger)
 
-	b.Shutdown()
+	b.Shutdown(ctx)
 
 	// Emitting new events after shutdown should not block or panic
 	type TestEvent struct{}
@@ -348,6 +350,62 @@ func TestBrain_EmitAfterShutdown(t *testing.T) {
 			assert.Equal(t, "joe.TestEvent", logEvent.Context[0].String)
 		}
 	}
+}
+
+func TestBrain_ShutdownContext(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	b := NewBrain(logger)
+
+	// This test uses a chan chan to communicate synchronously with the handler below.
+	shutdownHandlerCallback := make(chan chan bool)
+	b.RegisterHandler(func(ShutdownEvent) {
+		t.Log("ShutdownEvent handler started and blocking until further notice")
+		ok := <-shutdownHandlerCallback
+		t.Log("ShutdownEvent received signal and exits now")
+		ok <- true
+	})
+
+	started := make(chan bool)
+	go func() {
+		t.Log("Event handler goroutine started")
+		started <- true
+		b.HandleEvents()
+	}()
+
+	<-started // wait until the HandleEvents goroutine is running
+
+	shutdownCtx, cancel := context.WithCancel(ctx)
+	shutdownDone := make(chan bool, 1)
+
+	go func() {
+		t.Log("Starting shutdown")
+		b.Shutdown(shutdownCtx)
+		t.Log("Starting completed")
+		shutdownDone <- true
+	}()
+
+	// At this point the shutdown should be in progress but block in the handler
+	select {
+	case <-shutdownDone:
+		t.Fatal("Shutdown function exited without calling ShutdownEvent handler")
+	case <-time.After(10 * time.Millisecond):
+		// ok, seems like shutdown is actually blocked and we can move on
+	}
+
+	t.Log("Cancelling shutdown context")
+	cancel()
+
+	select {
+	case <-shutdownDone:
+		// ok great, lets move on
+	case <-time.After(10 * time.Millisecond):
+		t.Error("Shutdown function did not return even though the context was cancelled")
+	}
+
+	// Finally lets release the shutdown event handler and finish the test
+	callback := make(chan bool)
+	shutdownHandlerCallback <- callback
+	<-callback
 }
 
 // EmitSync emits the given event on the brain and blocks until it has received
