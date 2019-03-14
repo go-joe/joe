@@ -6,7 +6,7 @@
 	<a href="https://goreportcard.com/report/github.com/go-joe/joe"><img src="https://goreportcard.com/badge/github.com/go-joe/joe"></a>
 	<a href="https://codecov.io/gh/go-joe/joe"><img src="https://codecov.io/gh/go-joe/joe/branch/master/graph/badge.svg"/></a>
 	<a href="https://godoc.org/github.com/go-joe/joe"><img src="https://img.shields.io/badge/godoc-reference-blue.svg?color=blue"></a>
-	<a href="https://github.com/go-joe/joe/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-4183c4.svg?color=blue"></a>
+	<a href="https://github.com/go-joe/joe/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-BSD--3--Clause-blue.svg"></a>
 </p>
 
 ---
@@ -281,7 +281,7 @@ See also the list of [contributors][contributors] who participated in this proje
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 

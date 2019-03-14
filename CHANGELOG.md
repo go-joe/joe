@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- Nothing so far
+- Switch license from MIT to BSD-3-Clause
 
 ## [v0.2.0] - 2019-03-10
 ### Added
