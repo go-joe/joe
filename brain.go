@@ -106,6 +106,13 @@ func (b *Brain) isClosed() bool {
 //   // returns an error it will be logged.
 //   func(MyCustomEventStruct) error
 //
+//   // Event handlers can also accept an interface in which case they will be
+//   // be called for all events which implement the interface. Consequently,
+//   // you can register a function which accepts the empty interface which will
+//   // will receive all emitted events. Such event handlers can optionally also
+//   // accept a context and/or return an error like other handlers.
+//   func(context.Context, interface{}) error
+//
 // The event that will be dispatched to the passed handler function corresponds
 // directly to the accepted function argument. For instance if you want to emit
 // and receive a custom event you can implement it like this:
@@ -277,7 +284,8 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 		zap.Int("handlers", len(b.handlers[typ])),
 	)
 
-	for _, handler := range b.handlers[typ] {
+	handlers := b.determineHandlers(typ)
+	for _, handler := range handlers {
 		err := b.executeEventHandler(ctx, handler, event)
 		if err != nil {
 			b.logger.Error("Event handler failed",
@@ -290,6 +298,21 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 	for _, callback := range evt.Callbacks {
 		callback(evt)
 	}
+}
+
+func (b *Brain) determineHandlers(evtType reflect.Type) []eventHandler {
+	var handlers []eventHandler
+	for handlerType, hh := range b.handlers {
+		if handlerType == evtType {
+			handlers = append(handlers, hh...)
+		}
+
+		if handlerType.Kind() == reflect.Interface && evtType.Implements(handlerType) {
+			handlers = append(handlers, hh...)
+		}
+	}
+
+	return handlers
 }
 
 func (b *Brain) executeEventHandler(ctx context.Context, handler eventHandler, event reflect.Value) error {
@@ -425,7 +448,7 @@ func checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withCon
 	}
 
 	switch evtType.Kind() {
-	case reflect.Struct:
+	case reflect.Struct, reflect.Interface:
 		// ok cool, move on
 	case reflect.Ptr:
 		err = errors.New("event handler argument must be a struct and not a pointer")

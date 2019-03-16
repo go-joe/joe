@@ -81,6 +81,28 @@ func TestBrain_RegisterHandler(t *testing.T) {
 				return nil
 			},
 		},
+		"ok_interface": {
+			fun: func(evt interface{}) {
+				evt.(TestEvent).EventHandled.Done()
+			},
+		},
+		"ok_interface_with_context": {
+			fun: func(ctx context.Context, evt interface{}) {
+				evt.(TestEvent).EventHandled.Done()
+			},
+		},
+		"ok_interface_with_error": {
+			fun: func(evt interface{}) error {
+				evt.(TestEvent).EventHandled.Done()
+				return nil
+			},
+		},
+		"ok_interface_with_context_and_error": {
+			fun: func(ctx context.Context, evt interface{}) error {
+				evt.(TestEvent).EventHandled.Done()
+				return nil
+			},
+		},
 	}
 
 	for name, c := range cases {
