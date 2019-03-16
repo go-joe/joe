@@ -22,7 +22,7 @@ import (
 type Brain struct {
 	logger *zap.Logger
 
-	mu     sync.RWMutex // mu protects concurrent access to the Memory
+	mu     sync.RWMutex // mu protects concurrent access to the Memory as well as registering new handlers
 	memory Memory
 
 	eventsInput chan Event // input for any new events, the Brain ensures that callers never block when writing to it
@@ -154,7 +154,11 @@ func (b *Brain) registerHandler(fun interface{}) error {
 	)
 
 	handlerFun := newHandlerFunc(handler, withContext, returnsErr)
+
+	b.mu.Lock()
 	b.handlers[evtType] = append(b.handlers[evtType], handlerFun)
+	b.mu.Unlock()
+
 	return nil
 }
 
@@ -279,12 +283,13 @@ func (b *Brain) consumeEvents() {
 func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 	event := reflect.ValueOf(evt.Data)
 	typ := event.Type()
+	handlers := b.determineHandlers(typ)
+
 	b.logger.Debug("Handling new event",
 		zap.Stringer("event_type", typ),
-		zap.Int("handlers", len(b.handlers[typ])),
+		zap.Int("handlers", len(handlers)),
 	)
 
-	handlers := b.determineHandlers(typ)
 	for _, handler := range handlers {
 		err := b.executeEventHandler(ctx, handler, event)
 		if err != nil {
@@ -301,6 +306,9 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 }
 
 func (b *Brain) determineHandlers(evtType reflect.Type) []eventHandler {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
 	var handlers []eventHandler
 	for handlerType, hh := range b.handlers {
 		if handlerType == evtType {
@@ -335,7 +343,7 @@ func (b *Brain) executeEventHandler(ctx context.Context, handler eventHandler, e
 	}
 }
 
-// Shutdown stops event handler loop of the Brain and waits until all pending
+// Shutdown stops the event handler loop of the Brain and waits until all pending
 // events have been processed. After the brain is shutdown, it will no longer
 // accept new events. The passed context can be used to stop waiting for any
 // pending events or handlers and instead exit immediately (e.g. after a timeout
