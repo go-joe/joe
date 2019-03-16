@@ -14,9 +14,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// The Brain contains the core logic of a Bot by implementing an event handler
-// that dispatches events to all registered event handlers. Additionally the
-// Brain is directly connected to the Memory of the bot to manage concurrent
+// The Brain contains the core logic of a Bot by implementing an event handling
+// system that dispatches events to all registered event handlers. Additionally
+// the Brain is directly connected to the Memory of the bot to manage concurrent
 // access as well as to emit the BrainMemoryEvent if memory is created, edited
 // or deleted on the brain.
 type Brain struct {
@@ -38,7 +38,7 @@ type Brain struct {
 }
 
 // An Event represents a concrete event type and optional callbacks that are
-// triggered when the event was processed by any handler.
+// triggered when the event was processed by all registered handlers.
 type Event struct {
 	Data      interface{}
 	Callbacks []func(Event)
@@ -97,8 +97,8 @@ func (b *Brain) isClosed() bool {
 //   // MyCustomEventStruct must be any struct but not a pointer to a struct.
 //   func(MyCustomEventStruct)
 //
-//   // You can optionally accept a context as the first argument. It will
-//   // receive the correct context of the Bot
+//   // You can optionally accept a context as the first argument. The context
+//   // is used to signal handler timeouts or when the bot is shutting down.
 //   func(context.Context, MyCustomEventStruct)
 //
 //   // You can optionally return a single error value. Returning any other type
@@ -152,9 +152,12 @@ func (b *Brain) registerHandler(fun interface{}) error {
 }
 
 // Emit sends the first argument as event to the brain from where it is
-// dispatched to all registered handlers. This function blocks until the event
-// handler was started via Brain.HandleEvents(). When the event handler is
-// running it will return immediately.
+// dispatched to all registered handlers. The events are dispatched
+// asynchronously but in the same order in which they are send to this function.
+// Emit does not block until the event is delivered to the registered event
+// handlers. If you want to wait until all handlers have processed the event you
+// can pass one or more callback functions that will be executed when all
+// handlers finished execution of this event.
 func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
 	if b.isClosed() {
 		b.logger.Debug(
@@ -167,8 +170,8 @@ func (b *Brain) Emit(event interface{}, callbacks ...func(Event)) {
 	b.eventsInput <- Event{Data: event, Callbacks: callbacks}
 }
 
-// HandleEvents starts the event handler loop of the Brain. This function blocks
-// until Brain.Shutdown() is called and returned.
+// HandleEvents starts the event handling loop of the Brain.
+// This function blocks until Brain.Shutdown() is called and returned.
 func (b *Brain) HandleEvents() {
 	if b.isClosed() {
 		b.logger.Error("HandleEvents failed because bot is already closed")

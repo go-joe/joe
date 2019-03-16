@@ -123,7 +123,7 @@ func newBot(ctx context.Context, logger *zap.Logger, name string, modules ...Mod
 		brain:          brain,
 	}
 
-	conf.logger.Info("Initializing bot", zap.String("name", name))
+	logger.Info("Initializing bot", zap.String("name", name))
 	for _, mod := range modules {
 		err := mod(conf)
 		if err != nil {
@@ -147,7 +147,7 @@ func newBot(ctx context.Context, logger *zap.Logger, name string, modules ...Mod
 // Run starts the bot and runs its event handler loop until the bots context
 // is canceled (by default via SIGINT, SIGQUIT or SIGTERM). If there was an
 // an error when setting up the Bot via New() or when registering the event
-// handlers it will be returned before the bot starts to process any events.
+// handlers it will be returned immediately.
 func (b *Bot) Run() error {
 	if b.initErr != nil {
 		return errors.Wrap(b.initErr, "failed to initialize bot")
@@ -162,8 +162,7 @@ func (b *Bot) Run() error {
 
 	go func() {
 		// Keep running until the context is canceled via SIGINT.
-		<-b.ctx.Done() // TODO: improve this a bit
-
+		<-b.ctx.Done()
 		shutdownCtx := cliContext() // closed upon another SIGINT
 		b.Brain.Shutdown(shutdownCtx)
 	}()
