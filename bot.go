@@ -64,26 +64,52 @@ type Module func(*Config) error
 //   err := b.Run()
 //   …
 func New(name string, modules ...Module) *Bot {
-	ctx := cliContext() // context can be changed via the WithContext Option/Module.
-	logger := newLogger()
-	return newBot(ctx, logger, name, modules...)
+	logger := newLogger(modules)
+	brain := NewBrain(logger.Named("brain"))
+
+	conf := &Config{
+		Name:           name,
+		HandlerTimeout: brain.handlerTimeout,
+		adapter:        NewCLIAdapter(name, logger),
+		logger:         logger,
+		brain:          brain,
+	}
+
+	logger.Info("Initializing bot", zap.String("name", name))
+	for _, mod := range modules {
+		err := mod(conf)
+		if err != nil {
+			conf.errs = append(conf.errs, err)
+		}
+	}
+
+	if conf.Context == nil {
+		conf.Context = cliContext()
+	}
+
+	// apply all configuration options
+	brain.handlerTimeout = conf.HandlerTimeout
+
+	return &Bot{
+		Name:    conf.Name,
+		ctx:     conf.Context,
+		Logger:  conf.logger,
+		Adapter: conf.adapter,
+		Brain:   brain,
+		initErr: multierr.Combine(conf.errs...),
+	}
 }
 
-// cliContext creates the default context.Context that is used by the bot.
-// This context is canceled if the bot receives a SIGINT, SIGQUIT or SIGTERM.
-func cliContext() context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
-	sig := make(chan os.Signal)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
-	go func() {
-		<-sig
-		cancel()
-	}()
+func newLogger(modules []Module) *zap.Logger {
+	var conf Config
+	for _, m := range modules {
+		_ = m(&conf)
+	}
 
-	return ctx
-}
+	if conf.logger != nil {
+		return conf.logger
+	}
 
-func newLogger() *zap.Logger {
 	cfg := zap.Config{
 		Level:       zap.NewAtomicLevelAt(zap.DebugLevel),
 		Development: false,
@@ -111,37 +137,18 @@ func newLogger() *zap.Logger {
 	return logger
 }
 
-func newBot(ctx context.Context, logger *zap.Logger, name string, modules ...Module) *Bot {
-	brain := NewBrain(logger.Named("brain"))
+// cliContext creates the default context.Context that is used by the bot.
+// This context is canceled if the bot receives a SIGINT, SIGQUIT or SIGTERM.
+func cliContext() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	sig := make(chan os.Signal)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	go func() {
+		<-sig
+		cancel()
+	}()
 
-	conf := &Config{
-		Context:        ctx,
-		Name:           name,
-		HandlerTimeout: brain.handlerTimeout,
-		adapter:        NewCLIAdapter(name, logger),
-		logger:         logger,
-		brain:          brain,
-	}
-
-	logger.Info("Initializing bot", zap.String("name", name))
-	for _, mod := range modules {
-		err := mod(conf)
-		if err != nil {
-			conf.errs = append(conf.errs, err)
-		}
-	}
-
-	// apply all configuration options
-	brain.handlerTimeout = conf.HandlerTimeout
-
-	return &Bot{
-		Name:    conf.Name,
-		ctx:     conf.Context,
-		Logger:  conf.logger,
-		Adapter: conf.adapter,
-		Brain:   brain,
-		initErr: multierr.Combine(conf.errs...),
-	}
+	return ctx
 }
 
 // Run starts the bot and runs its event handler loop until the bots context

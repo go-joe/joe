@@ -1,6 +1,6 @@
 linters-settings:
   govet:
-    check-shadowing: true
+    check-shadowing: false
   golint:
     min-confidence: 0
   gocyclo:
@@ -34,6 +34,7 @@ linters:
     - maligned
     - prealloc
     - depguard
+    - interfacer
 
 service:
   golangci-lint-version: 1.15.x # use the fixed version to not introduce new linters unexpectedly
@@ -61,7 +62,3 @@ issues:
       path: ".+_test\\.go"
       linters:
         - gochecknoglobals
-
-    - text: "`t` can be `(github.com/go-joe/joe/vendor/)?github.com/stretchr/testify/(assert|require).TestingT`"
-      linters:
-        - interfacer

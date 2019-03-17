@@ -45,3 +45,9 @@ func TestWithHandlerTimeout(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 42*time.Millisecond, conf.HandlerTimeout)
 }
+
+// TestBot_Logger simply tests that the zap logger configuration in newLogger()
+// doesn't panic.
+func TestBot_Logger(t *testing.T) {
+	newLogger(nil)
+}

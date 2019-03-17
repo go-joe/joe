@@ -22,7 +22,7 @@ import (
 type Brain struct {
 	logger *zap.Logger
 
-	mu     sync.RWMutex // mu protects concurrent access to the Memory
+	mu     sync.RWMutex // mu protects concurrent access to the Memory as well as registering new handlers
 	memory Memory
 
 	eventsInput chan Event // input for any new events, the Brain ensures that callers never block when writing to it
@@ -106,6 +106,13 @@ func (b *Brain) isClosed() bool {
 //   // returns an error it will be logged.
 //   func(MyCustomEventStruct) error
 //
+//   // Event handlers can also accept an interface in which case they will be
+//   // be called for all events which implement the interface. Consequently,
+//   // you can register a function which accepts the empty interface which will
+//   // will receive all emitted events. Such event handlers can optionally also
+//   // accept a context and/or return an error like other handlers.
+//   func(context.Context, interface{}) error
+//
 // The event that will be dispatched to the passed handler function corresponds
 // directly to the accepted function argument. For instance if you want to emit
 // and receive a custom event you can implement it like this:
@@ -147,7 +154,11 @@ func (b *Brain) registerHandler(fun interface{}) error {
 	)
 
 	handlerFun := newHandlerFunc(handler, withContext, returnsErr)
+
+	b.mu.Lock()
 	b.handlers[evtType] = append(b.handlers[evtType], handlerFun)
+	b.mu.Unlock()
+
 	return nil
 }
 
@@ -272,12 +283,14 @@ func (b *Brain) consumeEvents() {
 func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 	event := reflect.ValueOf(evt.Data)
 	typ := event.Type()
+	handlers := b.determineHandlers(typ)
+
 	b.logger.Debug("Handling new event",
 		zap.Stringer("event_type", typ),
-		zap.Int("handlers", len(b.handlers[typ])),
+		zap.Int("handlers", len(handlers)),
 	)
 
-	for _, handler := range b.handlers[typ] {
+	for _, handler := range handlers {
 		err := b.executeEventHandler(ctx, handler, event)
 		if err != nil {
 			b.logger.Error("Event handler failed",
@@ -290,6 +303,24 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 	for _, callback := range evt.Callbacks {
 		callback(evt)
 	}
+}
+
+func (b *Brain) determineHandlers(evtType reflect.Type) []eventHandler {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	var handlers []eventHandler
+	for handlerType, hh := range b.handlers {
+		if handlerType == evtType {
+			handlers = append(handlers, hh...)
+		}
+
+		if handlerType.Kind() == reflect.Interface && evtType.Implements(handlerType) {
+			handlers = append(handlers, hh...)
+		}
+	}
+
+	return handlers
 }
 
 func (b *Brain) executeEventHandler(ctx context.Context, handler eventHandler, event reflect.Value) error {
@@ -312,7 +343,7 @@ func (b *Brain) executeEventHandler(ctx context.Context, handler eventHandler, e
 	}
 }
 
-// Shutdown stops event handler loop of the Brain and waits until all pending
+// Shutdown stops the event handler loop of the Brain and waits until all pending
 // events have been processed. After the brain is shutdown, it will no longer
 // accept new events. The passed context can be used to stop waiting for any
 // pending events or handlers and instead exit immediately (e.g. after a timeout
@@ -425,7 +456,7 @@ func checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withCon
 	}
 
 	switch evtType.Kind() {
-	case reflect.Struct:
+	case reflect.Struct, reflect.Interface:
 		// ok cool, move on
 	case reflect.Ptr:
 		err = errors.New("event handler argument must be a struct and not a pointer")
