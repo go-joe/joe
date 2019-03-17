@@ -13,8 +13,9 @@ import (
 type Brain struct {
 	*joe.Brain
 
-	mu     sync.Mutex
-	events []interface{}
+	mu         sync.Mutex
+	events     []interface{}
+	eventsChan chan joe.Event
 }
 
 // NewBrain creates a new Brain that can be used for unit testing. The Brain
@@ -24,7 +25,10 @@ type Brain struct {
 // must call Brain.Finish() at the end of their tests.
 func NewBrain(t TestingT) *Brain {
 	logger := zaptest.NewLogger(t)
-	b := &Brain{Brain: joe.NewBrain(logger)}
+	b := &Brain{
+		Brain:      joe.NewBrain(logger),
+		eventsChan: make(chan joe.Event, 100),
+	}
 
 	initialized := make(chan bool)
 	b.RegisterHandler(b.observeEvent)
@@ -42,11 +46,18 @@ func (b *Brain) observeEvent(evt interface{}) {
 	switch evt.(type) {
 	case joe.InitEvent, joe.ShutdownEvent:
 		return
-	default:
-		b.mu.Lock()
-		b.events = append(b.events, evt)
-		b.mu.Unlock()
 	}
+
+	select {
+	case b.eventsChan <- joe.Event{Data: evt}:
+		// ok, lets move on
+	default:
+		// nobody is listening, also fine
+	}
+
+	b.mu.Lock()
+	b.events = append(b.events, evt)
+	b.mu.Unlock()
 }
 
 // Finish stops the event handler loop of the Brain and waits until all pending
@@ -66,4 +77,9 @@ func (b *Brain) RecordedEvents() []interface{} {
 	b.mu.Unlock()
 
 	return events
+}
+
+// Events returns a channel that receives all emitted events.
+func (b *Brain) Events() <-chan joe.Event {
+	return b.eventsChan
 }

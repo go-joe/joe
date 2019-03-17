@@ -10,4 +10,5 @@ type TestingT interface {
 	Failed() bool
 	Name() string
 	FailNow()
+	Helper()
 }

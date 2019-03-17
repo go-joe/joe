@@ -97,6 +97,11 @@ func (a *CLIAdapter) loop(brain *Brain) {
 			lines = input // activate first case again
 
 		case result := <-a.closing:
+			if lines == nil {
+				// We were just waiting for our callback
+				_ = a.print(a.Prefix)
+			}
+
 			_ = a.print("\n")
 			result <- a.Input.Close()
 			return

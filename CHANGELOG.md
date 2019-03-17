@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Event handler functions can now accept interfaces instead of structs
+- Add new `github.com/go-joe/joe/joetest` package for unit tests
+- Add new `joetest.Brain` type
+- Add new `WithLogger(…)` option
 
 ### Changed
 - Switch license from MIT to BSD-3-Clause
+- Move `TestingT` type into new `joetest` package
+- Move `TestBot` type into new `joetest` package and rename to `joetest.Bot`
+
+### Fixed
+- Fixed flaky unit test of `CLIAdapter`
 
 ## [v0.2.0] - 2019-03-10
 ### Added

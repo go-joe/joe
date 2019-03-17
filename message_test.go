@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestMessage_Respond(t *testing.T) {
@@ -26,4 +27,22 @@ func TestMessage_RespondE(t *testing.T) {
 
 	assert.Equal(t, err, actual)
 	a.AssertExpectations(t)
+}
+
+type MockAdapter struct {
+	mock.Mock
+}
+
+func (a *MockAdapter) RegisterAt(b *Brain) {
+	a.Called(b)
+}
+
+func (a *MockAdapter) Send(text, channel string) error {
+	args := a.Called(text, channel)
+	return args.Error(0)
+}
+
+func (a *MockAdapter) Close() error {
+	args := a.Called()
+	return args.Error(0)
 }

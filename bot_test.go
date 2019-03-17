@@ -1,4 +1,4 @@
-package joe
+package joe_test
 
 import (
 	"bytes"
@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-joe/joe"
+	"github.com/go-joe/joe/joetest"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -16,15 +18,15 @@ import (
 )
 
 func TestBot_Run(t *testing.T) {
-	b := NewTest(t)
+	b := joetest.NewBot(t)
 
 	initEvt := make(chan bool)
-	b.Brain.RegisterHandler(func(evt InitEvent) {
+	b.Brain.RegisterHandler(func(evt joe.InitEvent) {
 		initEvt <- true
 	})
 
 	shutdownEvt := make(chan bool)
-	b.Brain.RegisterHandler(func(evt ShutdownEvent) {
+	b.Brain.RegisterHandler(func(evt joe.ShutdownEvent) {
 		shutdownEvt <- true
 	})
 
@@ -42,9 +44,9 @@ func TestBot_Run(t *testing.T) {
 }
 
 func TestBot_Respond(t *testing.T) {
-	b := NewTest(t)
-	handledMessages := make(chan Message)
-	b.Respond("Hello (.+), this is a (.+)", func(msg Message) error {
+	b := joetest.NewBot(t)
+	handledMessages := make(chan joe.Message)
+	b.Respond("Hello (.+), this is a (.+)", func(msg joe.Message) error {
 		handledMessages <- msg
 		return nil
 	})
@@ -52,7 +54,7 @@ func TestBot_Respond(t *testing.T) {
 	b.Start()
 	defer b.Stop()
 
-	b.Brain.Emit(ReceiveMessageEvent{
+	b.Brain.Emit(joe.ReceiveMessageEvent{
 		Text:    "Hello world, this is a test",
 		Channel: "XXX",
 	})
@@ -68,9 +70,9 @@ func TestBot_Respond(t *testing.T) {
 }
 
 func TestBot_Respond_Matches(t *testing.T) {
-	b := NewTest(t)
-	handledMessages := make(chan Message)
-	b.Respond("Remember (.+) is (.+)", func(msg Message) error {
+	b := joetest.NewBot(t)
+	handledMessages := make(chan joe.Message)
+	b.Respond("Remember (.+) is (.+)", func(msg joe.Message) error {
 		handledMessages <- msg
 		return nil
 	})
@@ -85,7 +87,7 @@ func TestBot_Respond_Matches(t *testing.T) {
 	}
 
 	for input, matches := range cases {
-		b.Brain.Emit(ReceiveMessageEvent{Text: input})
+		b.Brain.Emit(joe.ReceiveMessageEvent{Text: input})
 		select {
 		case msg := <-handledMessages:
 			assert.Equal(t, matches, msg.Matches)
@@ -96,8 +98,8 @@ func TestBot_Respond_Matches(t *testing.T) {
 }
 
 func TestBot_Respond_No_Matches(t *testing.T) {
-	b := NewTest(t)
-	b.Respond("Hello world, this is a test", func(msg Message) error {
+	b := joetest.NewBot(t)
+	b.Respond("Hello world, this is a test", func(msg joe.Message) error {
 		t.Errorf("Handler should not match but got %+v", msg)
 		return nil
 	})
@@ -118,15 +120,15 @@ func TestBot_Respond_No_Matches(t *testing.T) {
 	defer b.Stop()
 
 	for _, txt := range nonMatches {
-		b.EmitSync(ReceiveMessageEvent{Text: txt})
+		b.EmitSync(joe.ReceiveMessageEvent{Text: txt})
 	}
 }
 
 func TestBot_RespondRegex(t *testing.T) {
-	b := NewTest(t)
-	handledMessages := make(chan Message, 1)
-	b.RespondRegex(`name is ([^\s]+)$`, func(msg Message) error {
-		t.Logf("Received message %q", msg.Text)
+	b := joetest.NewBot(t)
+	handledMessages := make(chan joe.Message, 1)
+	b.RespondRegex(`name is ([^\s]+)$`, func(msg joe.Message) error {
+		t.Logf("Received joe.Message %q", msg.Text)
 		handledMessages <- msg
 		return nil
 	})
@@ -143,7 +145,7 @@ func TestBot_RespondRegex(t *testing.T) {
 	}
 
 	for input, matches := range cases {
-		b.EmitSync(ReceiveMessageEvent{Text: input})
+		b.EmitSync(joe.ReceiveMessageEvent{Text: input})
 
 		if matches == nil {
 			select {
@@ -151,12 +153,12 @@ func TestBot_RespondRegex(t *testing.T) {
 				t.Errorf("message handler should not have been called with %q", msg.Text)
 				continue
 			default:
-				// no message as expected, lets move on
+				// no joe.Message as expected, lets move on
 				continue
 			}
 		}
 
-		// Check message was handled as expected
+		// Check joe.Message was handled as expected
 		select {
 		case msg := <-handledMessages:
 			assert.Equal(t, matches, msg.Matches)
@@ -167,8 +169,8 @@ func TestBot_RespondRegex(t *testing.T) {
 }
 
 func TestBot_RespondRegex_Empty(t *testing.T) {
-	b := NewTest(t)
-	b.RespondRegex("", func(msg Message) error {
+	b := joetest.NewBot(t)
+	b.RespondRegex("", func(msg joe.Message) error {
 		t.Error("should never match")
 		return nil
 	})
@@ -186,13 +188,13 @@ func TestBot_RespondRegex_Empty(t *testing.T) {
 	}
 
 	for _, input := range cases {
-		b.EmitSync(ReceiveMessageEvent{Text: input})
+		b.EmitSync(joe.ReceiveMessageEvent{Text: input})
 	}
 }
 
 func TestBot_RespondRegex_Invalid(t *testing.T) {
-	b := NewTest(t)
-	b.RespondRegex("this is not a [valid regular expression", func(msg Message) error {
+	b := joetest.NewBot(t)
+	b.RespondRegex("this is not a [valid regular expression", func(msg joe.Message) error {
 		t.Error("should never match")
 		return nil
 	})
@@ -205,15 +207,15 @@ func TestBot_RespondRegex_Invalid(t *testing.T) {
 func TestBot_CloseAdapter(t *testing.T) {
 	input := &testCloser{Reader: new(bytes.Buffer)}
 	output := new(bytes.Buffer)
-	testAdapter := func(conf *Config) error {
-		a := NewCLIAdapter("test", conf.Logger("adapter"))
+	testAdapter := func(conf *joe.Config) error {
+		a := joe.NewCLIAdapter("test", conf.Logger("adapter"))
 		a.Input = input
 		a.Output = output
 		conf.SetAdapter(a)
 		return nil
 	}
 
-	b := NewTest(t, testAdapter)
+	b := joetest.NewBot(t, testAdapter)
 
 	b.Start()
 	b.Stop()
@@ -222,22 +224,22 @@ func TestBot_CloseAdapter(t *testing.T) {
 }
 
 func TestBot_ModuleErrors(t *testing.T) {
-	modA := func(conf *Config) error {
+	modA := func(conf *joe.Config) error {
 		return errors.New("error in module A")
 	}
 
-	modB := func(conf *Config) error {
+	modB := func(conf *joe.Config) error {
 		return errors.New("error in module B")
 	}
 
-	b := NewTest(t, modA, modB)
+	b := joetest.NewBot(t, modA, modB)
 
 	err := b.Run()
 	assert.EqualError(t, err, "failed to initialize bot: error in module A; error in module B")
 }
 
 func TestBot_RegistrationErrors(t *testing.T) {
-	b := NewTest(t)
+	b := joetest.NewBot(t)
 
 	b.Brain.RegisterHandler(42)        // not a valid handler
 	b.Brain.RegisterHandler(func() {}) // not a valid handler
@@ -250,15 +252,9 @@ func TestBot_RegistrationErrors(t *testing.T) {
 	assert.Regexp(t, "event handler needs one or two arguments", err.Error())
 }
 
-// TestBot_Logger simply tests that the zap logger configuration in newLogger()
-// doesn't panic.
-func TestBot_Logger(t *testing.T) {
-	newLogger()
-}
-
 func TestBot_Say(t *testing.T) {
 	a := new(MockAdapter)
-	b := NewTest(t)
+	b := joetest.NewBot(t)
 	b.Adapter = a
 
 	a.On("Send", "Hello world", "foo").Return(nil)
@@ -275,7 +271,7 @@ func TestBot_Say_Error(t *testing.T) {
 	logger := zap.New(obs)
 
 	a := new(MockAdapter)
-	b := NewTest(t)
+	b := joetest.NewBot(t)
 	b.Adapter = a
 	b.Logger = logger
 
@@ -294,7 +290,7 @@ func TestBot_Say_Error(t *testing.T) {
 // TestBot_HandlerEvents tests if event handler functions can safely (i.e. without
 // deadlock or panic) emit new events.
 func TestBot_HandlerEvents(t *testing.T) {
-	b := NewTest(t)
+	b := joetest.NewBot(t)
 
 	type TestEvent struct {
 		N int
@@ -307,7 +303,7 @@ func TestBot_HandlerEvents(t *testing.T) {
 
 	msgEvents := 10
 	testEventsPerMsg := 10
-	b.Brain.RegisterHandler(func(ReceiveMessageEvent) {
+	b.Brain.RegisterHandler(func(joe.ReceiveMessageEvent) {
 		// This test checks that emitting events from within an event handler
 		// does not deadlock the Brain.
 		for i := 0; i < testEventsPerMsg; i++ {
@@ -318,7 +314,7 @@ func TestBot_HandlerEvents(t *testing.T) {
 
 	b.Start()
 	for i := 0; i < msgEvents; i++ {
-		b.EmitSync(ReceiveMessageEvent{})
+		b.EmitSync(joe.ReceiveMessageEvent{})
 	}
 	b.Stop() // should block until all events have been processed
 
@@ -355,7 +351,7 @@ type MockAdapter struct {
 	mock.Mock
 }
 
-func (a *MockAdapter) RegisterAt(b *Brain) {
+func (a *MockAdapter) RegisterAt(b *joe.Brain) {
 	a.Called(b)
 }
 
