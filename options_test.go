@@ -33,7 +33,7 @@ func TestConfig(t *testing.T) {
 func TestWithContext(t *testing.T) {
 	var conf Config
 	mod := WithContext(ctx)
-	err := mod(&conf)
+	err := mod.Apply(&conf)
 	assert.NoError(t, err)
 	assert.Equal(t, ctx, conf.Context)
 }
@@ -41,7 +41,7 @@ func TestWithContext(t *testing.T) {
 func TestWithHandlerTimeout(t *testing.T) {
 	var conf Config
 	mod := WithHandlerTimeout(42 * time.Millisecond)
-	err := mod(&conf)
+	err := mod.Apply(&conf)
 	assert.NoError(t, err)
 	assert.Equal(t, 42*time.Millisecond, conf.HandlerTimeout)
 }

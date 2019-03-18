@@ -34,7 +34,17 @@ type Bot struct {
 
 // A Module is an optional Bot extension that can add new capabilities such as
 // a different Brain.Memory implementation or a different Adapter.
-type Module func(*Config) error
+type Module interface {
+	Apply(*Config) error
+}
+
+// ModuleFunc is a function implementation of a Module.
+type ModuleFunc func(*Config) error
+
+// Apply implements the Module interface.
+func (f ModuleFunc) Apply(conf *Config) error {
+	return f(conf)
+}
 
 // New creates a new Bot and initializes it with the given Modules and Options.
 // By default the Bot will use an in-memory in Brain and a CLI adapter that
@@ -77,7 +87,7 @@ func New(name string, modules ...Module) *Bot {
 
 	logger.Info("Initializing bot", zap.String("name", name))
 	for _, mod := range modules {
-		err := mod(conf)
+		err := mod.Apply(conf)
 		if err != nil {
 			conf.errs = append(conf.errs, err)
 		}
@@ -102,8 +112,10 @@ func New(name string, modules ...Module) *Bot {
 
 func newLogger(modules []Module) *zap.Logger {
 	var conf Config
-	for _, m := range modules {
-		_ = m(&conf)
+	for _, mod := range modules {
+		if x, ok := mod.(loggerModule); ok {
+			_ = x(&conf)
+		}
 	}
 
 	if conf.logger != nil {

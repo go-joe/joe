@@ -5,7 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Nothing so far
+- Change type of `Module` from function to interface to allow more flexibility
+- Introduce new `ModuleFunc` type to migrate old modules to new interface type
 
 ## [v0.3.0] - 2019-03-17
 ### Added
