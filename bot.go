@@ -74,10 +74,12 @@ func (f ModuleFunc) Apply(conf *Config) error {
 //   err := b.Run()
 //   …
 func New(name string, modules ...Module) *Bot {
+	ctx := newContext(modules)
 	logger := newLogger(modules)
 	brain := NewBrain(logger.Named("brain"))
 
 	conf := &Config{
+		Context:        ctx,
 		Name:           name,
 		HandlerTimeout: brain.handlerTimeout,
 		adapter:        NewCLIAdapter(name, logger),
@@ -93,10 +95,6 @@ func New(name string, modules ...Module) *Bot {
 		}
 	}
 
-	if conf.Context == nil {
-		conf.Context = cliContext()
-	}
-
 	// apply all configuration options
 	brain.handlerTimeout = conf.HandlerTimeout
 
@@ -108,6 +106,35 @@ func New(name string, modules ...Module) *Bot {
 		Brain:   brain,
 		initErr: multierr.Combine(conf.errs...),
 	}
+}
+
+func newContext(modules []Module) context.Context {
+	var conf Config
+	for _, mod := range modules {
+		if x, ok := mod.(loggerModule); ok {
+			_ = x(&conf)
+		}
+	}
+
+	if conf.Context != nil {
+		return conf.Context
+	}
+
+	return cliContext()
+}
+
+// cliContext creates the default context.Context that is used by the bot.
+// This context is canceled if the bot receives a SIGINT, SIGQUIT or SIGTERM.
+func cliContext() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	sig := make(chan os.Signal)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	go func() {
+		<-sig
+		cancel()
+	}()
+
+	return ctx
 }
 
 func newLogger(modules []Module) *zap.Logger {
@@ -147,20 +174,6 @@ func newLogger(modules []Module) *zap.Logger {
 	}
 
 	return logger
-}
-
-// cliContext creates the default context.Context that is used by the bot.
-// This context is canceled if the bot receives a SIGINT, SIGQUIT or SIGTERM.
-func cliContext() context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
-	sig := make(chan os.Signal)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
-	go func() {
-		<-sig
-		cancel()
-	}()
-
-	return ctx
 }
 
 // Run starts the bot and runs its event handler loop until the bots context

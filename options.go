@@ -55,7 +55,7 @@ func (c *Config) RegisterHandler(fun interface{}) {
 
 // WithContext is an option to replace the default context of a bot.
 func WithContext(ctx context.Context) Module {
-	return ModuleFunc(func(conf *Config) error {
+	return contextModule(func(conf *Config) error {
 		conf.Context = ctx
 		return nil
 	})
@@ -76,6 +76,12 @@ func WithLogger(logger *zap.Logger) Module {
 		conf.logger = logger
 		return nil
 	})
+}
+
+type contextModule func(*Config) error
+
+func (fun contextModule) Apply(conf *Config) error {
+	return fun(conf)
 }
 
 type loggerModule func(*Config) error
