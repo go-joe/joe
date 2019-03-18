@@ -207,13 +207,13 @@ func TestBot_RespondRegex_Invalid(t *testing.T) {
 func TestBot_CloseAdapter(t *testing.T) {
 	input := &testCloser{Reader: new(bytes.Buffer)}
 	output := new(bytes.Buffer)
-	testAdapter := func(conf *joe.Config) error {
+	testAdapter := joe.ModuleFunc(func(conf *joe.Config) error {
 		a := joe.NewCLIAdapter("test", conf.Logger("adapter"))
 		a.Input = input
 		a.Output = output
 		conf.SetAdapter(a)
 		return nil
-	}
+	})
 
 	b := joetest.NewBot(t, testAdapter)
 
@@ -224,13 +224,13 @@ func TestBot_CloseAdapter(t *testing.T) {
 }
 
 func TestBot_ModuleErrors(t *testing.T) {
-	modA := func(conf *joe.Config) error {
+	modA := joe.ModuleFunc(func(conf *joe.Config) error {
 		return errors.New("error in module A")
-	}
+	})
 
-	modB := func(conf *joe.Config) error {
+	modB := joe.ModuleFunc(func(conf *joe.Config) error {
 		return errors.New("error in module B")
-	}
+	})
 
 	b := joetest.NewBot(t, modA, modB)
 

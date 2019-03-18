@@ -53,27 +53,34 @@ func (c *Config) RegisterHandler(fun interface{}) {
 	c.brain.RegisterHandler(fun)
 }
 
-// WithLogger is an option to replace the default logger of a bot.
-func WithLogger(logger *zap.Logger) Module {
-	return func(conf *Config) error {
-		conf.logger = logger
-		return nil
-	}
-}
-
 // WithContext is an option to replace the default context of a bot.
 func WithContext(ctx context.Context) Module {
-	return func(conf *Config) error {
+	return ModuleFunc(func(conf *Config) error {
 		conf.Context = ctx
 		return nil
-	}
+	})
 }
 
 // WithHandlerTimeout is an option to set a timeout on event handlers functions.
 // By default no timeout is enforced.
 func WithHandlerTimeout(timeout time.Duration) Module {
-	return func(conf *Config) error {
+	return ModuleFunc(func(conf *Config) error {
 		conf.HandlerTimeout = timeout
 		return nil
-	}
+	})
 }
+
+// WithLogger is an option to replace the default logger of a bot.
+func WithLogger(logger *zap.Logger) Module {
+	return loggerModule(func(conf *Config) error {
+		conf.logger = logger
+		return nil
+	})
+}
+
+type loggerModule func(*Config) error
+
+func (fun loggerModule) Apply(conf *Config) error {
+	return fun(conf)
+}
+

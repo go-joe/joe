@@ -41,13 +41,13 @@ func NewBot(t TestingT, modules ...joe.Module) *Bot {
 		runErr: make(chan error, 1), // buffered so we can return from Bot.Run without blocking
 	}
 
-	testAdapter := func(conf *joe.Config) error {
+	testAdapter := joe.ModuleFunc(func(conf *joe.Config) error {
 		a := joe.NewCLIAdapter("test", conf.Logger("adapter"))
 		a.Input = ioutil.NopCloser(input)
 		a.Output = output
 		conf.SetAdapter(a)
 		return nil
-	}
+	})
 
 	// The testAdapter and logger modules must be passed first so the caller can
 	// actually inject a different Adapter or logger if required.
