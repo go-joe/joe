@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.5.0] - 2019-03-18
+### Fixed
+- Fixed nil pointer panic in slack adapter when context is nil
+
 ## [v0.4.0] - 2019-03-18
 ### Changed
 - Change type of `Module` from function to interface to allow more flexibility
@@ -49,7 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial release, note that Joe is still in alpha and the API is not yet considered
 stable before the v1.0.0 release.
 
-[Unreleased]: https://github.com/go-joe/joe/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/go-joe/joe/compare/v0.5.0...HEAD
+[v0.4.0]: https://github.com/go-joe/joe/compare/v0.4.0...v0.5.0
 [v0.4.0]: https://github.com/go-joe/joe/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/go-joe/joe/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/go-joe/joe/compare/v0.1.0...v0.2.0
