@@ -83,4 +83,3 @@ type loggerModule func(*Config) error
 func (fun loggerModule) Apply(conf *Config) error {
 	return fun(conf)
 }
-
