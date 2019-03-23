@@ -11,27 +11,22 @@
 
 ---
 
-Joe is a library that helps you to write chat bots using [the Go programming language][go].
+Joe is a library used to write chat bots in [the Go programming language][go].
 It is very much inspired by the awesome [Hubot][hubot] framework developed by the
-folks at Github and brings its power to people who want to write chat bots using Go.
+folks at Github and brings its power to people who want to implement chat bots using Go.
 
 **THIS SOFTWARE IS STILL IN ALPHA AND THERE ARE NO GUARANTEES REGARDING API STABILITY YET.**
 
 ## Getting Started
 
 Joe is packaged using the new [Go modules][go-modules]. Therefore the recommended
-installation is by adding joe to your `go.mod` file like this: 
+installation method is to add joe to your `go.mod` via: 
 
 ```
-module github.com/go-joe/example-bot
-
-require (
-	github.com/go-joe/joe v0.5.0
-	…
-)
+require github.com/go-joe/joe v0.5.0
 ```
 
-If you want to hack on Joe you can of course also go get it directly:
+If you do not use modules yet or you want to hack on Joe you can also go get Joe directly:
 
 ```bash
 go get github.com/go-joe/joe
@@ -101,8 +96,8 @@ type ExampleBot struct {
 func main() {
 	b := &ExampleBot{
 		Bot: joe.New("example",
-			redis.Memory("localhost:6379", redis.WithKey("joe")),
-			slack.Adapter("xoxb-14523452312-123424522422-sOj13lLot1qSLXfWMlE6UKE4"),
+			redis.Memory("localhost:6379"),
+			slack.Adapter("xoxb-1452345…"),
 		),
 	}
 
@@ -117,13 +112,12 @@ func main() {
 
 func (b *ExampleBot) Remember(msg joe.Message) error {
 	key, value := msg.Matches[0], msg.Matches[1]
-	key = strings.TrimSpace(key)
 	msg.Respond("OK, I'll remember %s is %s", key, value)
 	return b.Brain.Set(key, value)
 }
 
 func (b *ExampleBot) WhatIs(msg joe.Message) error {
-	key := strings.TrimSpace(msg.Matches[0])
+	key := msg.Matches[0]
 	value, ok, err := b.Brain.Get(key)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve key %q from brain", key)
@@ -150,8 +144,8 @@ into. In fact the `Bot.Respond(…)` function that we used in the earlier exampl
 is doing exactly that to listen for any `joe.ReceiveMessageEvent` that match the
 specified regular expression and then execute the handler function.
 
-Implementing custom events is very easy because you can emit any type as event
-and register handlers that match only this type. What this exactly means is best
+Implementing custom events is easy because you can emit any type as event and
+register handlers that match only this type. What this exactly means is best
 demonstrated with another example:
 
 ```go
@@ -204,7 +198,7 @@ func (b *ExampleBot) HandleCustomEvent(evt CustomEvent) {
 
 You may want to integrate your bot with applications such as Github or Gitlab to
 trigger a handler or just send a message to Slack. Usually this is done by
-providing an HTTP callback to those applications so they can send POST data when
+providing an HTTP callback to those applications so they can POST data when
 there is an event. We already saw in the previous section that is is very easy
 to implement custom events so we will use this feature to implement HTTP
 integrations as well. Since this is such a dominant use-case we already provide
@@ -271,7 +265,7 @@ conduct and on the process for submitting pull requests to this repository.
 ## Versioning
 
 We use [SemVer](http://semver.org/) for versioning. For the versions available,
-see the [tags on this repository][tags. 
+see the [tags on this repository][tags]. 
 
 ## Authors
 
