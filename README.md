@@ -19,14 +19,7 @@ folks at Github and brings its power to people who want to implement chat bots u
 
 ## Getting Started
 
-Joe is packaged using the new [Go modules][go-modules]. Therefore the recommended
-installation method is to add joe to your `go.mod` via: 
-
-```
-require github.com/go-joe/joe v0.5.0
-```
-
-If you do not use modules yet or you want to hack on Joe you can also go get Joe directly:
+Joe is packaged using the new [Go modules][go-modules]. You can get joe via:
 
 ```bash
 go get github.com/go-joe/joe
