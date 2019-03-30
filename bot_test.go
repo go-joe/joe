@@ -69,6 +69,61 @@ func TestBot_Respond(t *testing.T) {
 	}
 }
 
+func TestBot_Respond_Data(t *testing.T) {
+	b := joetest.NewBot(t)
+	handledMessages := make(chan joe.Message)
+	b.Respond("Test message", func(msg joe.Message) error {
+		handledMessages <- msg
+		return nil
+	})
+
+	b.Start()
+	defer b.Stop()
+
+	type CustomData struct {
+		Foo string
+	}
+
+	// Test if extra data passed via the ReceiveMessageEvent is copied to the Message
+	data := &CustomData{Foo: "bar"}
+	b.Brain.Emit(joe.ReceiveMessageEvent{
+		Text: "Test message",
+		Data: data,
+	})
+
+	select {
+	case msg := <-handledMessages:
+		assert.Equal(t, data, msg.Data)
+	case <-time.After(time.Second):
+		t.Error("Timeout")
+	}
+}
+
+func TestBot_Respond_AuthorID(t *testing.T) {
+	b := joetest.NewBot(t)
+	handledMessages := make(chan joe.Message)
+	b.Respond("Test message", func(msg joe.Message) error {
+		handledMessages <- msg
+		return nil
+	})
+
+	b.Start()
+	defer b.Stop()
+
+	// Test if extra data passed via the ReceiveMessageEvent is copied to the Message
+	b.Brain.Emit(joe.ReceiveMessageEvent{
+		Text:     "Test message",
+		AuthorID: "Friedrich",
+	})
+
+	select {
+	case msg := <-handledMessages:
+		assert.Equal(t, "Friedrich", msg.AuthorID)
+	case <-time.After(time.Second):
+		t.Error("Timeout")
+	}
+}
+
 func TestBot_Respond_Matches(t *testing.T) {
 	b := joetest.NewBot(t)
 	handledMessages := make(chan joe.Message)

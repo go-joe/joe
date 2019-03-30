@@ -265,11 +265,13 @@ func (b *Bot) RespondRegex(expr string, fun func(Message) error) {
 		}
 
 		return fun(Message{
-			Context: ctx,
-			Text:    evt.Text,
-			Channel: evt.Channel,
-			Matches: matches[1:],
-			adapter: b.Adapter,
+			Context:  ctx,
+			Text:     evt.Text,
+			AuthorID: evt.AuthorID,
+			Data:     evt.Data,
+			Channel:  evt.Channel,
+			Matches:  matches[1:],
+			adapter:  b.Adapter,
 		})
 	})
 }

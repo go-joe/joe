@@ -18,6 +18,7 @@ func cliTestAdapter(t *testing.T) (a *joe.CLIAdapter, output *bytes.Buffer) {
 	a = joe.NewCLIAdapter("test", logger)
 	output = new(bytes.Buffer)
 	a.Output = output
+	a.Author = "TestUser" // ensure tests never depend on external factors such as os.Getenv(…)
 	return a, output
 }
 
@@ -60,6 +61,26 @@ func TestCLIAdapter_Send(t *testing.T) {
 	err := a.Send("Hello World", "")
 	require.NoError(t, err)
 	assert.Equal(t, "Hello World\n", output.String())
+}
+
+func TestCLIAdapter_Send_Author(t *testing.T) {
+	input := new(bytes.Buffer)
+	a, _ := cliTestAdapter(t)
+	a.Input = ioutil.NopCloser(input)
+	a.Author = "Friedrich"
+	brain := joetest.NewBrain(t)
+	messages := brain.Events()
+
+	input.WriteString("Test\n")
+
+	// Start the Goroutine of the adapter which consumes the input
+	a.RegisterAt(brain.Brain)
+
+	msg := <-messages
+	assert.Equal(t, "Friedrich", msg.Data.(joe.ReceiveMessageEvent).AuthorID)
+
+	brain.Finish()
+	assert.NoError(t, a.Close())
 }
 
 func TestCLIAdapter_Close(t *testing.T) {
