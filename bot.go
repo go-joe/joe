@@ -78,18 +78,14 @@ func New(name string, modules ...Module) *Bot {
 	logger := newLogger(modules)
 	brain := NewBrain(logger.Named("brain"))
 
-	conf := &Config{
-		Context:        ctx,
-		Name:           name,
-		HandlerTimeout: brain.handlerTimeout,
-		adapter:        NewCLIAdapter(name, logger),
-		logger:         logger,
-		brain:          brain,
-	}
+	conf := NewConfig(logger, brain, NewCLIAdapter(name, logger))
+	conf.Context = ctx
+	conf.Name = name
+	conf.HandlerTimeout = brain.handlerTimeout
 
 	logger.Info("Initializing bot", zap.String("name", name))
 	for _, mod := range modules {
-		err := mod.Apply(conf)
+		err := mod.Apply(&conf)
 		if err != nil {
 			conf.errs = append(conf.errs, err)
 		}
