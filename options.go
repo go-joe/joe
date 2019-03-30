@@ -21,6 +21,16 @@ type Config struct {
 	errs    []error
 }
 
+// NewConfig creates a new Config. This function is mainly useful for unit
+// testing but is normally not required to create or use a bot.
+func NewConfig(logger *zap.Logger, brain *Brain, adapter Adapter) Config {
+	return Config{
+		adapter: adapter,
+		logger:  logger,
+		brain:   brain,
+	}
+}
+
 // The EventEmitter can be used by a Module by calling Config.EventEmitter().
 // Events are emitted asynchronously so every call to Emit is non-blocking.
 type EventEmitter interface {

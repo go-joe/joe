@@ -14,7 +14,7 @@ import (
 // An Adapter connects the bot with the chat by enabling it to receive and send
 // messages. Additionally advanced adapters can emit more events than just the
 // ReceiveMessageEvent (e.g. the slack adapter also emits the UserTypingEvent).
-// All adapter events must be setup in the Register function of the Adapter.
+// All adapter events must be setup in the RegisterAt function of the Adapter.
 //
 // Joe provides a default CLIAdapter implementation which connects the bot with
 // the local shell to receive messages from stdin and print messages to stdout.
