@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add ReceiveMessageEvent.AuthorID field to identify the author of the message
 - Add Message.Data field which contains a copy of the ReceiveMessageEvent.Data value
 - Add Message.AuthorID field which contains a copy of the ReceiveMessageEvent.AuthorID value 
+- Add Brain.Grant(…) Brain.CheckPermission(…) functions to allow implementing user permissions
 
 ## [v0.6.0] - 2019-03-30
 ### Added

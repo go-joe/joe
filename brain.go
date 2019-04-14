@@ -21,6 +21,7 @@ import (
 // or deleted on the brain.
 type Brain struct {
 	logger *zap.Logger
+	*auth
 
 	mu     sync.RWMutex // mu protects concurrent access to the Memory as well as registering new handlers
 	memory Memory
@@ -67,6 +68,7 @@ func NewBrain(logger *zap.Logger) *Brain {
 
 	b := &Brain{
 		logger:         logger,
+		auth:           newAuth(),
 		memory:         newInMemory(),
 		eventsInput:    make(chan Event),
 		eventsLoop:     make(chan Event),
