@@ -4,10 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestAuth(t *testing.T) {
-	auth := newAuth()
+	logger := zaptest.NewLogger(t)
+	mem := newInMemory()
+	auth := NewAuth(logger, mem)
 	userID := "fgrosse"
 
 	// Initially the user should have no permissions whatsoever

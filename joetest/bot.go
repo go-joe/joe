@@ -117,3 +117,15 @@ func (b *Bot) Stop() {
 		b.T.Errorf("Bot.Run() returned an error: %v", err)
 	}
 }
+
+// ReadOutput consumes all data from b.Output and returns it as a string so you
+// can easily make assertions on it.
+func (b *Bot) ReadOutput() string {
+	out, err := ioutil.ReadAll(b.Output)
+	if err != nil {
+		b.T.Errorf("failed to read all output of bot: %v", err)
+		return ""
+	}
+
+	return string(out)
+}

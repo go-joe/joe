@@ -17,6 +17,16 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
+func TestBot_New(t *testing.T) {
+	b := joe.New("test")
+	require.NotNil(t, b)
+	require.Equal(t, "test", b.Name)
+	require.NotNil(t, b.Auth)
+	require.NotNil(t, b.Logger)
+	require.NotNil(t, b.Brain)
+	require.NotNil(t, b.Adapter)
+}
+
 func TestBot_Run(t *testing.T) {
 	b := joetest.NewBot(t)
 
@@ -257,6 +267,35 @@ func TestBot_RespondRegex_Invalid(t *testing.T) {
 	err := b.Run()
 	require.Error(t, err)
 	require.Regexp(t, `invalid event handlers: .+\.go:\d+: error parsing regexp: missing closing \]`, err.Error())
+}
+
+func TestBot_Auth(t *testing.T) {
+	b := joetest.NewBot(t)
+	b.Respond("auth test", func(msg joe.Message) error {
+		err := b.Auth.CheckPermission("test.foo", msg.AuthorID)
+		if err != nil {
+			msg.Respond("I'm sorry Dave, I'm afraid I can't do that")
+			return nil
+		}
+
+		msg.Respond("OK")
+		return nil
+	})
+
+	b.Start()
+	assert.Equal(t, "test > ", b.ReadOutput())
+
+	userID := "42"
+	b.EmitSync(joe.ReceiveMessageEvent{Text: "auth test", AuthorID: userID})
+	assert.Equal(t, "I'm sorry Dave, I'm afraid I can't do that\n", b.ReadOutput())
+
+	err := b.Auth.Grant("test", userID)
+	require.NoError(t, err)
+
+	b.EmitSync(joe.ReceiveMessageEvent{Text: "auth test", AuthorID: userID})
+	assert.Equal(t, "OK\n", b.ReadOutput())
+
+	b.Stop()
 }
 
 func TestBot_CloseAdapter(t *testing.T) {

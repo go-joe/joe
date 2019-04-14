@@ -26,6 +26,7 @@ type Bot struct {
 	Name    string
 	Adapter Adapter
 	Brain   *Brain
+	Auth    *Auth
 	Logger  *zap.Logger
 
 	ctx     context.Context
@@ -99,6 +100,7 @@ func New(name string, modules ...Module) *Bot {
 		ctx:     conf.Context,
 		Logger:  conf.logger,
 		Adapter: conf.adapter,
+		Auth:    NewAuth(conf.logger, brain.memory),
 		Brain:   brain,
 		initErr: multierr.Combine(conf.errs...),
 	}
