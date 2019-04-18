@@ -274,12 +274,10 @@ func TestBot_Auth(t *testing.T) {
 	b.Respond("auth test", func(msg joe.Message) error {
 		err := b.Auth.CheckPermission("test.foo", msg.AuthorID)
 		if err != nil {
-			msg.Respond("I'm sorry Dave, I'm afraid I can't do that")
-			return nil
+			return msg.RespondE("I'm sorry Dave, I'm afraid I can't do that")
 		}
 
-		msg.Respond("OK")
-		return nil
+		return msg.RespondE("OK")
 	})
 
 	b.Start()
