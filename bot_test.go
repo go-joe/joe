@@ -120,7 +120,7 @@ func TestBot_Respond_AuthorID(t *testing.T) {
 	b.Start()
 	defer b.Stop()
 
-	// Test if extra data passed via the ReceiveMessageEvent is copied to the Message
+	// Test if author ID passed via the ReceiveMessageEvent is copied to the Message
 	b.Brain.Emit(joe.ReceiveMessageEvent{
 		Text:     "Test message",
 		AuthorID: "Friedrich",
