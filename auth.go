@@ -124,18 +124,23 @@ func (a *Auth) Grant(scope, userID string) (bool, error) {
 	}
 
 	a.logger.Info("Granting user permission",
-		zap.String("scope", scope),
 		zap.String("userID", userID),
+		zap.String("scope", scope),
 	)
 
 	err = a.memory.Set(key, string(data))
 	if err != nil {
-		return false, errors.Wrap(err, "failed to store user permissions")
+		return false, errors.Wrap(err, "failed to update user permissions")
 	}
 
 	return true, nil
 }
 
+// Revoke removes a previously grantde permission from a user. If the user does
+// not currently have the revoked scope this function returns false and no error.
+//
+// If you are trying to revoke a permission but the user was previously granted
+// a scope that contains the revoked scope this function returns an error.
 func (a *Auth) Revoke(scope, userID string) (bool, error) {
 	if scope == "" {
 		return false, errors.New("scope cannot be empty")
@@ -145,6 +150,10 @@ func (a *Auth) Revoke(scope, userID string) (bool, error) {
 	oldPermissions, err := a.loadPermissions(key)
 	if err != nil {
 		return false, errors.WithStack(err)
+	}
+
+	if len(oldPermissions) == 0 {
+		return false, nil
 	}
 
 	var revoked bool
@@ -166,19 +175,28 @@ func (a *Auth) Revoke(scope, userID string) (bool, error) {
 		return false, nil
 	}
 
+	a.logger.Info("Revoking user permission",
+		zap.String("userID", userID),
+		zap.String("scope", scope),
+	)
+
+	if len(newPermissions) == 0 {
+		_, err := a.memory.Delete(key)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to delete last user permission")
+		}
+
+		return true, nil
+	}
+
 	data, err := json.Marshal(newPermissions)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to encode permissions as JSON")
 	}
 
-	a.logger.Info("Granting user permission",
-		zap.String("scope", scope),
-		zap.String("userID", userID),
-	)
-
 	err = a.memory.Set(key, string(data))
 	if err != nil {
-		return false, errors.Wrap(err, "failed to store user permissions")
+		return false, errors.Wrap(err, "failed to update user permissions")
 	}
 
 	return true, nil

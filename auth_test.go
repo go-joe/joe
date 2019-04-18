@@ -124,8 +124,6 @@ func TestAuth_Revoke(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
-	// TODO: what if we revoke "foo.bar" and the user has the wider "foo" scope?
-
 	mem.AssertExpectations(t)
 }
 
@@ -149,6 +147,20 @@ func TestAuth_RevokeEmptyScope(t *testing.T) {
 	ok, err := auth.Revoke("", "fgrosse")
 	assert.EqualError(t, err, "scope cannot be empty")
 	assert.False(t, ok)
+}
+
+func TestAuth_RevokeLastScope(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	mem := new(memoryMock)
+	auth := NewAuth(logger, mem)
+
+	mem.On("Get", "joe.permissions.fgrosse").Return(`["test"]`, true, nil)
+	mem.On("Delete", "joe.permissions.fgrosse").Return(true, nil)
+
+	ok, err := auth.Revoke("test", "fgrosse")
+	assert.NoError(t, err)
+	assert.True(t, ok)
+	mem.AssertExpectations(t)
 }
 
 func TestAuth_CheckPermission_Errors(t *testing.T) {
@@ -183,5 +195,31 @@ func TestAuth_Grant_Errors(t *testing.T) {
 	mem.On("Get", "joe.permissions.test").Return("", false, nil)
 	mem.On("Set", "joe.permissions.test", `["xxx"]`).Return(errors.New("not today"))
 	_, err = auth.Grant("xxx", "test")
-	assert.EqualError(t, err, "failed to store user permissions: not today")
+	assert.EqualError(t, err, "failed to update user permissions: not today")
+}
+
+func TestAuth_Revoke_Errors(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	mem := new(memoryMock)
+	auth := NewAuth(logger, mem)
+
+	mem.On("Get", "joe.permissions.test").Return("", false, errors.New("that didn't work"))
+	_, err := auth.Revoke("xxx", "test")
+	assert.EqualError(t, err, "failed to load user permissions: that didn't work")
+
+	mem = new(memoryMock)
+	auth = NewAuth(logger, mem)
+
+	mem.On("Get", "joe.permissions.test").Return(`["foo", "bar"]`, true, nil)
+	mem.On("Set", "joe.permissions.test", `["bar"]`).Return(errors.New("not today"))
+	_, err = auth.Revoke("foo", "test")
+	assert.EqualError(t, err, "failed to update user permissions: not today")
+
+	mem = new(memoryMock)
+	auth = NewAuth(logger, mem)
+
+	mem.On("Get", "joe.permissions.test").Return(`["foo"]`, true, nil)
+	mem.On("Delete", "joe.permissions.test").Return(false, errors.New("not today"))
+	_, err = auth.Revoke("foo", "test")
+	assert.EqualError(t, err, "failed to delete last user permission: not today")
 }
