@@ -98,23 +98,30 @@ func (a *Auth) Grant(scope, userID string) error {
 	}
 
 	key := a.permissionsKey(userID)
-	permissions, err := a.loadPermissions(key)
+	oldPermissions, err := a.loadPermissions(key)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	newScope := true // until proven otherwise
-	for _, p := range permissions {
+	newPermissions := make([]string, 0, len(oldPermissions)+1)
+	for _, p := range oldPermissions {
 		if p == scope {
+			newPermissions = append(newPermissions, p)
 			newScope = false
+			continue
+		}
+
+		if !strings.HasPrefix(p, scope) {
+			newPermissions = append(newPermissions, p)
 		}
 	}
 
 	if newScope {
-		permissions = append(permissions, scope)
+		newPermissions = append(newPermissions, scope)
 	}
 
-	data, err := json.Marshal(permissions)
+	data, err := json.Marshal(newPermissions)
 	if err != nil {
 		return errors.Wrap(err, "failed to encode permissions as JSON")
 	}

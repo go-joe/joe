@@ -66,6 +66,21 @@ func TestAuth_GrantIsIdempotent(t *testing.T) {
 	mem.AssertExpectations(t)
 }
 
+func TestAuth_GrantWiderScope(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	mem := new(memoryMock)
+	auth := NewAuth(logger, mem)
+
+	// Lets assume day already has very specific permissions and now we are adding
+	// a wider scope that contains the original permissions.
+	mem.On("Get", "joe.permissions.fgrosse").Return(`["foo.bar.baz", "test"]`, true, nil)
+	mem.On("Set", "joe.permissions.fgrosse", `["test","foo"]`).Return(nil)
+
+	auth.Grant("foo", "fgrosse")
+
+	mem.AssertExpectations(t)
+}
+
 func TestAuth_CheckPermission_Errors(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mem := new(memoryMock)
