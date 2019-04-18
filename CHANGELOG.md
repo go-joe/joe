@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support extending permissions via Auth.Grant(…)
 - Add boolean return value to Auth.Grant(…) to indicate if a new permission was granted
 - Add Auth.Revoke(…) to remove permissions
+- Fix flaky unit test TestBrain_Memory
 
 ## [v0.7.0] - 2019-04-18
 - Add ReceiveMessageEvent.Data field to allow using the underlying message type of the adapters
