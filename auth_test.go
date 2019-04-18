@@ -163,6 +163,19 @@ func TestAuth_RevokeLastScope(t *testing.T) {
 	mem.AssertExpectations(t)
 }
 
+func TestAuth_RevokeNoOldScopes(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	mem := new(memoryMock)
+	auth := NewAuth(logger, mem)
+
+	mem.On("Get", "joe.permissions.fgrosse").Return("", false, nil)
+
+	ok, err := auth.Revoke("test", "fgrosse")
+	assert.NoError(t, err)
+	assert.False(t, ok)
+	mem.AssertExpectations(t)
+}
+
 func TestAuth_CheckPermission_Errors(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mem := new(memoryMock)

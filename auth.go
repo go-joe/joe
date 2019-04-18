@@ -117,23 +117,14 @@ func (a *Auth) Grant(scope, userID string) (bool, error) {
 		}
 	}
 
-	newPermissions = append(newPermissions, scope)
-	data, err := json.Marshal(newPermissions)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to encode permissions as JSON")
-	}
-
 	a.logger.Info("Granting user permission",
 		zap.String("userID", userID),
 		zap.String("scope", scope),
 	)
 
-	err = a.memory.Set(key, string(data))
-	if err != nil {
-		return false, errors.Wrap(err, "failed to update user permissions")
-	}
-
-	return true, nil
+	newPermissions = append(newPermissions, scope)
+	err = a.updatePermissions(key, newPermissions)
+	return true, err
 }
 
 // Revoke removes a previously grantde permission from a user. If the user does
@@ -189,17 +180,22 @@ func (a *Auth) Revoke(scope, userID string) (bool, error) {
 		return true, nil
 	}
 
-	data, err := json.Marshal(newPermissions)
+	err = a.updatePermissions(key, newPermissions)
+	return true, err
+}
+
+func (a *Auth) updatePermissions(key string, permissions []string) error {
+	data, err := json.Marshal(permissions)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to encode permissions as JSON")
+		return errors.Wrap(err, "failed to encode permissions as JSON")
 	}
 
 	err = a.memory.Set(key, string(data))
 	if err != nil {
-		return false, errors.Wrap(err, "failed to update user permissions")
+		return errors.Wrap(err, "failed to update user permissions")
 	}
 
-	return true, nil
+	return nil
 }
 
 func (a *Auth) permissionsKey(userID string) string {
