@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Message.Data field which contains a copy of the ReceiveMessageEvent.Data value
 - Add Message.AuthorID field which contains a copy of the ReceiveMessageEvent.AuthorID value 
 - Add Auth.Grant(…) and Auth.CheckPermission(…) functions to allow implementing user permissions
+- Add Brain.Close() function to let the brain implement the Memory interface
+- Add Brain.SetMemory(…) function to give more control over a joe.Brain
 
 ## [v0.6.0] - 2019-03-30
 ### Added

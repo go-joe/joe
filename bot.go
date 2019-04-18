@@ -100,7 +100,7 @@ func New(name string, modules ...Module) *Bot {
 		ctx:     conf.Context,
 		Logger:  conf.logger,
 		Adapter: conf.adapter,
-		Auth:    NewAuth(conf.logger, brain.memory),
+		Auth:    NewAuth(conf.logger, brain),
 		Brain:   brain,
 		initErr: multierr.Combine(conf.errs...),
 	}
@@ -206,7 +206,7 @@ func (b *Bot) Run() error {
 		b.Logger.Info("Error while closing adapter", zap.Error(err))
 	}
 
-	err = b.Brain.memory.Close()
+	err = b.Brain.Close() // TODO: should this happen in Brain.Shutdown(…) ?
 	if err != nil {
 		b.Logger.Info("Error while closing memory", zap.Error(err))
 	}
