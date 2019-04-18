@@ -51,37 +51,52 @@ func TestAuth(t *testing.T) {
 	require.Equal(t, ErrNotAllowed, err)
 }
 
+func TestAuth_GrantIsIdempotent(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	mem := new(memoryMock)
+	auth := NewAuth(logger, mem)
+
+	// Lets assume day already has permissions ot open the pod bay doors we want
+	// to make sure we will not append the same permissions multiple times.
+	mem.On("Get", "joe.permissions.dave").Return(`["open_pod_bay_doors","foo.bar"]`, true, nil)
+	mem.On("Set", "joe.permissions.dave", `["open_pod_bay_doors","foo.bar"]`).Return(nil)
+
+	auth.Grant("open_pod_bay_doors", "dave")
+
+	mem.AssertExpectations(t)
+}
+
 func TestAuth_CheckPermission_Errors(t *testing.T) {
 	logger := zaptest.NewLogger(t)
-	m := new(memoryMock)
-	auth := NewAuth(logger, m)
+	mem := new(memoryMock)
+	auth := NewAuth(logger, mem)
 
-	m.On("Get", "joe.permissions.test").Return("", false, errors.New("that didn't work"))
+	mem.On("Get", "joe.permissions.test").Return("", false, errors.New("that didn't work"))
 	err := auth.CheckPermission("xxx", "test")
 	assert.EqualError(t, err, "failed to load user permissions: that didn't work")
 
-	m = new(memoryMock)
-	auth = NewAuth(logger, m)
+	mem = new(memoryMock)
+	auth = NewAuth(logger, mem)
 
-	m.On("Get", "joe.permissions.test").Return("nope!", true, nil)
+	mem.On("Get", "joe.permissions.test").Return("nope!", true, nil)
 	err = auth.CheckPermission("xxx", "test")
 	assert.EqualError(t, err, "failed to decode user permissions as JSON: invalid character 'o' in literal null (expecting 'u')")
 }
 
 func TestAuth_Grant_Errors(t *testing.T) {
 	logger := zaptest.NewLogger(t)
-	m := new(memoryMock)
-	auth := NewAuth(logger, m)
+	mem := new(memoryMock)
+	auth := NewAuth(logger, mem)
 
-	m.On("Get", "joe.permissions.test").Return("", false, errors.New("that didn't work"))
+	mem.On("Get", "joe.permissions.test").Return("", false, errors.New("that didn't work"))
 	err := auth.Grant("xxx", "test")
 	assert.EqualError(t, err, "failed to load user permissions: that didn't work")
 
-	m = new(memoryMock)
-	auth = NewAuth(logger, m)
+	mem = new(memoryMock)
+	auth = NewAuth(logger, mem)
 
-	m.On("Get", "joe.permissions.test").Return("", false, nil)
-	m.On("Set", "joe.permissions.test", `["xxx"]`).Return(errors.New("not today"))
+	mem.On("Get", "joe.permissions.test").Return("", false, nil)
+	mem.On("Set", "joe.permissions.test", `["xxx"]`).Return(errors.New("not today"))
 	err = auth.Grant("xxx", "test")
 	assert.EqualError(t, err, "failed to store user permissions: not today")
 }
