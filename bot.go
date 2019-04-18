@@ -26,6 +26,7 @@ type Bot struct {
 	Name    string
 	Adapter Adapter
 	Brain   *Brain
+	Auth    *Auth
 	Logger  *zap.Logger
 
 	ctx     context.Context
@@ -99,6 +100,7 @@ func New(name string, modules ...Module) *Bot {
 		ctx:     conf.Context,
 		Logger:  conf.logger,
 		Adapter: conf.adapter,
+		Auth:    NewAuth(conf.logger, brain),
 		Brain:   brain,
 		initErr: multierr.Combine(conf.errs...),
 	}
@@ -204,7 +206,7 @@ func (b *Bot) Run() error {
 		b.Logger.Info("Error while closing adapter", zap.Error(err))
 	}
 
-	err = b.Brain.memory.Close()
+	err = b.Brain.Close() // TODO: should this happen in Brain.Shutdown(…) ?
 	if err != nil {
 		b.Logger.Info("Error while closing memory", zap.Error(err))
 	}
@@ -265,11 +267,13 @@ func (b *Bot) RespondRegex(expr string, fun func(Message) error) {
 		}
 
 		return fun(Message{
-			Context: ctx,
-			Text:    evt.Text,
-			Channel: evt.Channel,
-			Matches: matches[1:],
-			adapter: b.Adapter,
+			Context:  ctx,
+			Text:     evt.Text,
+			AuthorID: evt.AuthorID,
+			Data:     evt.Data,
+			Channel:  evt.Channel,
+			Matches:  matches[1:],
+			adapter:  b.Adapter,
 		})
 	})
 }

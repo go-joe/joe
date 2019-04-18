@@ -17,6 +17,16 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
+func TestBot_New(t *testing.T) {
+	b := joe.New("test")
+	require.NotNil(t, b)
+	require.Equal(t, "test", b.Name)
+	require.NotNil(t, b.Auth)
+	require.NotNil(t, b.Logger)
+	require.NotNil(t, b.Brain)
+	require.NotNil(t, b.Adapter)
+}
+
 func TestBot_Run(t *testing.T) {
 	b := joetest.NewBot(t)
 
@@ -64,6 +74,61 @@ func TestBot_Respond(t *testing.T) {
 		assert.Equal(t, "Hello world, this is a test", msg.Text)
 		assert.Equal(t, "XXX", msg.Channel)
 		assert.Equal(t, []string{"world", "test"}, msg.Matches)
+	case <-time.After(time.Second):
+		t.Error("Timeout")
+	}
+}
+
+func TestBot_Respond_Data(t *testing.T) {
+	b := joetest.NewBot(t)
+	handledMessages := make(chan joe.Message)
+	b.Respond("Test message", func(msg joe.Message) error {
+		handledMessages <- msg
+		return nil
+	})
+
+	b.Start()
+	defer b.Stop()
+
+	type CustomData struct {
+		Foo string
+	}
+
+	// Test if extra data passed via the ReceiveMessageEvent is copied to the Message
+	data := &CustomData{Foo: "bar"}
+	b.Brain.Emit(joe.ReceiveMessageEvent{
+		Text: "Test message",
+		Data: data,
+	})
+
+	select {
+	case msg := <-handledMessages:
+		assert.Equal(t, data, msg.Data)
+	case <-time.After(time.Second):
+		t.Error("Timeout")
+	}
+}
+
+func TestBot_Respond_AuthorID(t *testing.T) {
+	b := joetest.NewBot(t)
+	handledMessages := make(chan joe.Message)
+	b.Respond("Test message", func(msg joe.Message) error {
+		handledMessages <- msg
+		return nil
+	})
+
+	b.Start()
+	defer b.Stop()
+
+	// Test if author ID passed via the ReceiveMessageEvent is copied to the Message
+	b.Brain.Emit(joe.ReceiveMessageEvent{
+		Text:     "Test message",
+		AuthorID: "Friedrich",
+	})
+
+	select {
+	case msg := <-handledMessages:
+		assert.Equal(t, "Friedrich", msg.AuthorID)
 	case <-time.After(time.Second):
 		t.Error("Timeout")
 	}
@@ -202,6 +267,33 @@ func TestBot_RespondRegex_Invalid(t *testing.T) {
 	err := b.Run()
 	require.Error(t, err)
 	require.Regexp(t, `invalid event handlers: .+\.go:\d+: error parsing regexp: missing closing \]`, err.Error())
+}
+
+func TestBot_Auth(t *testing.T) {
+	b := joetest.NewBot(t)
+	b.Respond("auth test", func(msg joe.Message) error {
+		err := b.Auth.CheckPermission("test.foo", msg.AuthorID)
+		if err != nil {
+			return msg.RespondE("I'm sorry Dave, I'm afraid I can't do that")
+		}
+
+		return msg.RespondE("OK")
+	})
+
+	b.Start()
+	assert.Equal(t, "test > ", b.ReadOutput())
+
+	userID := "42"
+	b.EmitSync(joe.ReceiveMessageEvent{Text: "auth test", AuthorID: userID})
+	assert.Equal(t, "I'm sorry Dave, I'm afraid I can't do that\n", b.ReadOutput())
+
+	err := b.Auth.Grant("test", userID)
+	require.NoError(t, err)
+
+	b.EmitSync(joe.ReceiveMessageEvent{Text: "auth test", AuthorID: userID})
+	assert.Equal(t, "OK\n", b.ReadOutput())
+
+	b.Stop()
 }
 
 func TestBot_CloseAdapter(t *testing.T) {

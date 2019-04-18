@@ -27,11 +27,14 @@ type Adapter interface {
 // The CLIAdapter is the default Adapter implementation that the bot uses if no
 // other adapter was configured. It emits a ReceiveMessageEvent for each line it
 // receives from stdin and prints all sent messages to stdout.
+//
+// The CLIAdapter does not set the Message.Data field.
 type CLIAdapter struct {
 	Prefix  string
 	Input   io.ReadCloser
 	Output  io.Writer
 	Logger  *zap.Logger
+	Author  string     // used to set the author of the messages, defaults to os.Getenv("USER)
 	mu      sync.Mutex // protects the Output and closing channel
 	closing chan chan error
 }
@@ -44,6 +47,7 @@ func NewCLIAdapter(name string, logger *zap.Logger) *CLIAdapter {
 		Input:   os.Stdin,
 		Output:  os.Stdout,
 		Logger:  logger,
+		Author:  os.Getenv("USER"),
 		closing: make(chan chan error),
 	}
 }
@@ -88,7 +92,7 @@ func (a *CLIAdapter) loop(brain *Brain) {
 			}
 
 			lines = nil // disable this case and wait for the callback
-			brain.Emit(ReceiveMessageEvent{Text: msg}, callbackFun)
+			brain.Emit(ReceiveMessageEvent{Text: msg, AuthorID: a.Author}, callbackFun)
 
 		case <-callback:
 			// This case is executed after all ReceiveMessageEvent handlers have

@@ -50,7 +50,7 @@ func (c *Config) Logger(name string) *zap.Logger {
 
 // SetMemory can be used to change the Memory implementation of the bots Brain.
 func (c *Config) SetMemory(mem Memory) {
-	c.brain.memory = mem
+	c.brain.SetMemory(mem)
 }
 
 // SetAdapter can be used to change the Adapter implementation of the Bot.

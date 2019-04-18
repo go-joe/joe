@@ -85,9 +85,17 @@ func (b *Bot) EmitSync(event interface{}) {
 // the InitEvent.
 func (b *Bot) Start() {
 	started := make(chan bool)
-	b.Brain.RegisterHandler(func(evt joe.InitEvent) {
+
+	type InitTestEvent struct{}
+	b.Brain.RegisterHandler(func(evt InitTestEvent) {
 		started <- true
 	})
+
+	// When this event is handled we know the bot has completed its startup and
+	// is ready to process events. The joe.InitEvent isn't really an option here
+	// because it only marks that the bot is starting but we do not know when
+	// all other init handlers are done (e.g. for the CLI adapter).
+	b.Brain.Emit(InitTestEvent{})
 
 	go func() {
 		// The error will be available by calling Bot.Stop()
@@ -116,4 +124,16 @@ func (b *Bot) Stop() {
 	if err != nil {
 		b.T.Errorf("Bot.Run() returned an error: %v", err)
 	}
+}
+
+// ReadOutput consumes all data from b.Output and returns it as a string so you
+// can easily make assertions on it.
+func (b *Bot) ReadOutput() string {
+	out, err := ioutil.ReadAll(b.Output)
+	if err != nil {
+		b.T.Errorf("failed to read all output of bot: %v", err)
+		return ""
+	}
+
+	return string(out)
 }

@@ -80,6 +80,13 @@ func NewBrain(logger *zap.Logger) *Brain {
 	return b
 }
 
+// SetMemory assigns a different Memory to the Brain.
+func (b *Brain) SetMemory(m Memory) {
+	b.mu.Lock()
+	b.memory = m
+	b.mu.Unlock()
+}
+
 func (b *Brain) isHandlingEvents() bool {
 	return atomic.LoadInt32(&b.handlingEvents) == 1
 }
@@ -431,6 +438,14 @@ func (b *Brain) Memories() (map[string]string, error) {
 	b.mu.RUnlock()
 
 	return data, err
+}
+
+// Close shuts down the Memory of the brain.
+func (b *Brain) Close() error {
+	b.mu.Lock()
+	err := b.memory.Close()
+	b.mu.Unlock()
+	return err
 }
 
 func checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withContext bool, err error) {

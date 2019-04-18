@@ -5,7 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-Nothing so far
+- Add ReceiveMessageEvent.Data field to allow using the underlying message type of the adapters
+- Add ReceiveMessageEvent.AuthorID field to identify the author of the message
+- Add Message.Data field which contains a copy of the ReceiveMessageEvent.Data value
+- Add Message.AuthorID field which contains a copy of the ReceiveMessageEvent.AuthorID value 
+- Add Auth.Grant(…) and Auth.CheckPermission(…) functions to allow implementing user permissions
+- Add Brain.Close() function to let the brain implement the Memory interface
+- Add Brain.SetMemory(…) function to give more control over a joe.Brain
+- Fix joetest.Bot.Start(…) function to return only when actually _all_ initialization is done
 
 ## [v0.6.0] - 2019-03-30
 ### Added
