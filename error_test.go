@@ -7,7 +7,6 @@ import (
 )
 
 func TestError(t *testing.T) {
-	var err error
-	err = Error("test")
+	var err error = Error("test") // compiler check to make sure we are actually implementing the "error" interface
 	assert.Equal(t, "test", err.Error())
 }
