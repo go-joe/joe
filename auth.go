@@ -105,13 +105,11 @@ func (a *Auth) Grant(scope, userID string) (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	newScope := true // until proven otherwise
 	newPermissions := make([]string, 0, len(oldPermissions)+1)
 	for _, p := range oldPermissions {
-		if p == scope {
-			newPermissions = append(newPermissions, p)
-			newScope = false
-			continue
+		if strings.HasPrefix(scope, p) {
+			// The user already has this or a scope that "contains" it
+			return false, nil
 		}
 
 		if !strings.HasPrefix(p, scope) {
@@ -119,8 +117,53 @@ func (a *Auth) Grant(scope, userID string) (bool, error) {
 		}
 	}
 
-	if newScope {
-		newPermissions = append(newPermissions, scope)
+	newPermissions = append(newPermissions, scope)
+	data, err := json.Marshal(newPermissions)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to encode permissions as JSON")
+	}
+
+	a.logger.Info("Granting user permission",
+		zap.String("scope", scope),
+		zap.String("userID", userID),
+	)
+
+	err = a.memory.Set(key, string(data))
+	if err != nil {
+		return false, errors.Wrap(err, "failed to store user permissions")
+	}
+
+	return true, nil
+}
+
+func (a *Auth) Revoke(scope, userID string) (bool, error) {
+	if scope == "" {
+		return false, errors.New("scope cannot be empty")
+	}
+
+	key := a.permissionsKey(userID)
+	oldPermissions, err := a.loadPermissions(key)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	var revoked bool
+	newPermissions := make([]string, 0, len(oldPermissions))
+	for _, p := range oldPermissions {
+		if p == scope {
+			revoked = true
+			continue
+		}
+
+		if strings.HasPrefix(scope, p) {
+			return false, errors.Errorf("cannot revoke scope %q because the user still has the more general scope %q", scope, p)
+		}
+
+		newPermissions = append(newPermissions, p)
+	}
+
+	if !revoked {
+		return false, nil
 	}
 
 	data, err := json.Marshal(newPermissions)
@@ -138,7 +181,7 @@ func (a *Auth) Grant(scope, userID string) (bool, error) {
 		return false, errors.Wrap(err, "failed to store user permissions")
 	}
 
-	return newScope, nil
+	return true, nil
 }
 
 func (a *Auth) permissionsKey(userID string) string {
