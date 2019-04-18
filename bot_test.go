@@ -287,8 +287,9 @@ func TestBot_Auth(t *testing.T) {
 	b.EmitSync(joe.ReceiveMessageEvent{Text: "auth test", AuthorID: userID})
 	assert.Equal(t, "I'm sorry Dave, I'm afraid I can't do that\n", b.ReadOutput())
 
-	err := b.Auth.Grant("test", userID)
+	ok, err := b.Auth.Grant("test", userID)
 	require.NoError(t, err)
+	assert.True(t, ok)
 
 	b.EmitSync(joe.ReceiveMessageEvent{Text: "auth test", AuthorID: userID})
 	assert.Equal(t, "OK\n", b.ReadOutput())

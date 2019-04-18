@@ -20,14 +20,15 @@ func TestAuth(t *testing.T) {
 	require.Equal(t, ErrNotAllowed, err)
 
 	// Granting the empty scope is likely an error and thus should result in an error
-	err = auth.Grant("", userID)
+	_, err = auth.Grant("", userID)
 	require.EqualError(t, err, "scope cannot be empty")
 	err = auth.CheckPermission("", userID)
 	require.Equal(t, ErrNotAllowed, err)
 
 	// Grant the test.foo scope
-	err = auth.Grant("test.foo", userID)
+	ok, err := auth.Grant("test.foo", userID)
 	require.NoError(t, err)
+	assert.True(t, ok)
 
 	// The user has exactly the test.foo scope and should be granted access.
 	err = auth.CheckPermission("test.foo", userID)
@@ -61,7 +62,9 @@ func TestAuth_GrantIsIdempotent(t *testing.T) {
 	mem.On("Get", "joe.permissions.dave").Return(`["open_pod_bay_doors","foo.bar"]`, true, nil)
 	mem.On("Set", "joe.permissions.dave", `["open_pod_bay_doors","foo.bar"]`).Return(nil)
 
-	auth.Grant("open_pod_bay_doors", "dave")
+	ok, err := auth.Grant("open_pod_bay_doors", "dave")
+	require.NoError(t, err)
+	assert.False(t, ok)
 
 	mem.AssertExpectations(t)
 }
@@ -76,7 +79,9 @@ func TestAuth_GrantWiderScope(t *testing.T) {
 	mem.On("Get", "joe.permissions.fgrosse").Return(`["foo.bar.baz", "test"]`, true, nil)
 	mem.On("Set", "joe.permissions.fgrosse", `["test","foo"]`).Return(nil)
 
-	auth.Grant("foo", "fgrosse")
+	ok, err := auth.Grant("foo", "fgrosse")
+	require.NoError(t, err)
+	assert.True(t, ok)
 
 	mem.AssertExpectations(t)
 }
@@ -104,7 +109,7 @@ func TestAuth_Grant_Errors(t *testing.T) {
 	auth := NewAuth(logger, mem)
 
 	mem.On("Get", "joe.permissions.test").Return("", false, errors.New("that didn't work"))
-	err := auth.Grant("xxx", "test")
+	_, err := auth.Grant("xxx", "test")
 	assert.EqualError(t, err, "failed to load user permissions: that didn't work")
 
 	mem = new(memoryMock)
@@ -112,6 +117,6 @@ func TestAuth_Grant_Errors(t *testing.T) {
 
 	mem.On("Get", "joe.permissions.test").Return("", false, nil)
 	mem.On("Set", "joe.permissions.test", `["xxx"]`).Return(errors.New("not today"))
-	err = auth.Grant("xxx", "test")
+	_, err = auth.Grant("xxx", "test")
 	assert.EqualError(t, err, "failed to store user permissions: not today")
 }

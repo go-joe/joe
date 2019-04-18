@@ -84,6 +84,8 @@ func (a *Auth) loadPermissions(key string) ([]string, error) {
 
 // Grant adds a permission scope to the given user. When a scope was granted
 // to a specific user it can be checked later via CheckPermission(…).
+// The returned boolean indicates whether the scope was actually added (i.e. true)
+// or the user already had the granted scope (false).
 //
 // Note that granting a scope is an idempotent operations so granting the same
 // scope multiple times is a safe operation and will not change the internal
@@ -92,15 +94,15 @@ func (a *Auth) loadPermissions(key string) ([]string, error) {
 // The empty scope cannot be granted and trying to do so will result in an error.
 // If you want to grant access to all scopes you should prefix them with a
 // common scope such as "root." or "api.".
-func (a *Auth) Grant(scope, userID string) error {
+func (a *Auth) Grant(scope, userID string) (bool, error) {
 	if scope == "" {
-		return errors.New("scope cannot be empty")
+		return false, errors.New("scope cannot be empty")
 	}
 
 	key := a.permissionsKey(userID)
 	oldPermissions, err := a.loadPermissions(key)
 	if err != nil {
-		return errors.WithStack(err)
+		return false, errors.WithStack(err)
 	}
 
 	newScope := true // until proven otherwise
@@ -123,7 +125,7 @@ func (a *Auth) Grant(scope, userID string) error {
 
 	data, err := json.Marshal(newPermissions)
 	if err != nil {
-		return errors.Wrap(err, "failed to encode permissions as JSON")
+		return false, errors.Wrap(err, "failed to encode permissions as JSON")
 	}
 
 	a.logger.Info("Granting user permission",
@@ -133,10 +135,10 @@ func (a *Auth) Grant(scope, userID string) error {
 
 	err = a.memory.Set(key, string(data))
 	if err != nil {
-		return errors.Wrap(err, "failed to store user permissions")
+		return false, errors.Wrap(err, "failed to store user permissions")
 	}
 
-	return nil
+	return newScope, nil
 }
 
 func (a *Auth) permissionsKey(userID string) string {

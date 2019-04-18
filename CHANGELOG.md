@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Make Auth.Grant(…) idempotent
 - Support extending permissions via Auth.Grant(…)
+- Add boolean return value to Auth.Grant(…) to indicate if a new permission was granted
 
 ## [v0.7.0] - 2019-04-18
 - Add ReceiveMessageEvent.Data field to allow using the underlying message type of the adapters
