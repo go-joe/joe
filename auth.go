@@ -11,11 +11,13 @@ import (
 // ErrNotAllowed is returned if the user is not allowed access to a specific scope.
 const ErrNotAllowed = Error("not allowed")
 
+// Auth implements logic to add user authorization checks to your bot.
 type Auth struct {
 	logger *zap.Logger
 	memory Memory
 }
 
+// NewAuth creates a new Auth instance.
 func NewAuth(logger *zap.Logger, memory Memory) *Auth {
 	return &Auth{
 		logger: logger,
@@ -23,8 +25,8 @@ func NewAuth(logger *zap.Logger, memory Memory) *Auth {
 	}
 }
 
-// CheckPermissions checks if a user has permissions to access a resource under
-// a given scope. If the user is not permitted access this function returns
+// CheckPermission checks if a user has permissions to access a resource under a
+// given scope. If the user is not permitted access this function returns
 // ErrNotAllowed.
 //
 // Scopes are interpreted in a hierarchical way where scope A can be contained
