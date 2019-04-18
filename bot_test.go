@@ -14,11 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestBot_New(t *testing.T) {
-	b := joe.New("test")
+	logger := zaptest.NewLogger(t)
+	b := joe.New("test", joe.WithLogger(logger))
 	require.NotNil(t, b)
 	require.Equal(t, "test", b.Name)
 	require.NotNil(t, b.Auth)
