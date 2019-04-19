@@ -270,7 +270,13 @@ func TestBrain_Memory(t *testing.T) {
 		events = append(events, evt)
 	})
 
+	waitInit := make(chan bool)
+	b.RegisterHandler(func(InitEvent) {
+		waitInit <- true
+	})
+
 	go b.HandleEvents()
+	<-waitInit // wait until bot has actually started
 
 	require.NoError(t, b.Set("foo", "bar"))
 	require.NoError(t, b.Set("hello", "world"))

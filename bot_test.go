@@ -14,11 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestBot_New(t *testing.T) {
-	b := joe.New("test")
+	logger := zaptest.NewLogger(t)
+	b := joe.New("test", joe.WithLogger(logger))
 	require.NotNil(t, b)
 	require.Equal(t, "test", b.Name)
 	require.NotNil(t, b.Auth)
@@ -287,8 +289,9 @@ func TestBot_Auth(t *testing.T) {
 	b.EmitSync(joe.ReceiveMessageEvent{Text: "auth test", AuthorID: userID})
 	assert.Equal(t, "I'm sorry Dave, I'm afraid I can't do that\n", b.ReadOutput())
 
-	err := b.Auth.Grant("test", userID)
+	ok, err := b.Auth.Grant("test", userID)
 	require.NoError(t, err)
+	assert.True(t, ok)
 
 	b.EmitSync(joe.ReceiveMessageEvent{Text: "auth test", AuthorID: userID})
 	assert.Equal(t, "OK\n", b.ReadOutput())

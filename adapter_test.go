@@ -3,7 +3,6 @@ package joe_test
 import (
 	"bytes"
 	"io/ioutil"
-	"strings"
 	"testing"
 
 	"github.com/go-joe/joe"
@@ -46,14 +45,7 @@ func TestCLIAdapter_Register(t *testing.T) {
 
 	// Close the adapter to finish up the test
 	assert.NoError(t, a.Close())
-
-	expectedOutput := strings.Join([]string{
-		"test > ", // Hello
-		"test > ", // World
-		"test > ", // <ctrl>+c
-		"\n",
-	}, "")
-	assert.Equal(t, expectedOutput, output.String())
+	assert.Contains(t, output.String(), "test > ")
 }
 
 func TestCLIAdapter_Send(t *testing.T) {
