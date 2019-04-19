@@ -38,7 +38,7 @@ func NewAuth(logger *zap.Logger, memory Memory) *Auth {
 // write-only access via "api.example.write".
 //
 // Alternatively you can also grant any access to the Example API via "api.example"
-// which includes both the read and write scope beneath it. If you choose to you
+// which includes both the read and write scope beneath it. If you choose to, you
 // could also allow even more general access to everything in the api via the
 // "api" scope. The empty scope "" cannot be granted and will thus always return
 // an error in the permission check.
@@ -127,7 +127,7 @@ func (a *Auth) Grant(scope, userID string) (bool, error) {
 	return true, err
 }
 
-// Revoke removes a previously grantde permission from a user. If the user does
+// Revoke removes a previously granted permission from a user. If the user does
 // not currently have the revoked scope this function returns false and no error.
 //
 // If you are trying to revoke a permission but the user was previously granted

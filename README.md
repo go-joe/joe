@@ -207,10 +207,9 @@ user will not have write permissions or you can allow people write-only access
 via the `api.example.write` scope.
 
 Alternatively you can also grant any access to the Example API via `api.example`
-which includes both the read and write scope beneath it. If you choose to you
+which includes both the read and write scope beneath it. If you want you
 could also allow even more general access to everything in the api via the
-`api` scope. The empty scope "" cannot be granted and will thus always return
-an error in the permission check.
+`api` scope.
 
 Scopes can be granted statically in code or dynamically in a handler like this:
 

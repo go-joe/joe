@@ -57,7 +57,7 @@ func TestAuth_GrantIsIdempotent(t *testing.T) {
 	mem := new(memoryMock)
 	auth := NewAuth(logger, mem)
 
-	// Lets assume day already has permissions ot open the pod bay doors we want
+	// Lets assume dave already has permissions ot open the pod bay doors we want
 	// to make sure we will not append the same permissions multiple times.
 	mem.On("Get", "joe.permissions.dave").Return(`["open_pod_bay_doors","foo.bar"]`, true, nil)
 
@@ -75,8 +75,8 @@ func TestAuth_GrantWiderScope(t *testing.T) {
 	mem := new(memoryMock)
 	auth := NewAuth(logger, mem)
 
-	// Lets assume day already has very specific permissions and now we are adding
-	// a wider scope that contains the original permissions.
+	// Lets assume dave already has very specific permissions and now we are
+	// adding a wider scope that contains the original permissions.
 	mem.On("Get", "joe.permissions.fgrosse").Return(`["foo.bar.baz", "test"]`, true, nil)
 	mem.On("Set", "joe.permissions.fgrosse", `["test","foo"]`).Return(nil)
 
