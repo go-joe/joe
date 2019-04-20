@@ -1,7 +1,6 @@
 package joe
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -14,14 +13,14 @@ const ErrNotAllowed = Error("not allowed")
 // Auth implements logic to add user authorization checks to your bot.
 type Auth struct {
 	logger *zap.Logger
-	memory Memory
+	store  *Storage
 }
 
 // NewAuth creates a new Auth instance.
-func NewAuth(logger *zap.Logger, memory Memory) *Auth {
+func NewAuth(logger *zap.Logger, store *Storage) *Auth {
 	return &Auth{
 		logger: logger,
-		memory: memory,
+		store:  store,
 	}
 }
 
@@ -64,19 +63,14 @@ func (a *Auth) CheckPermission(scope, userID string) error {
 }
 
 func (a *Auth) loadPermissions(key string) ([]string, error) {
-	data, ok, err := a.memory.Get(key)
+	var permissions []string
+	ok, err := a.store.Get(key, &permissions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load user permissions")
 	}
 
 	if !ok {
 		return nil, nil
-	}
-
-	var permissions []string
-	err = json.NewDecoder(strings.NewReader(data)).Decode(&permissions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode user permissions as JSON")
 	}
 
 	return permissions, nil
@@ -172,7 +166,7 @@ func (a *Auth) Revoke(scope, userID string) (bool, error) {
 	)
 
 	if len(newPermissions) == 0 {
-		_, err := a.memory.Delete(key)
+		_, err := a.store.Delete(key)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to delete last user permission")
 		}
@@ -185,12 +179,7 @@ func (a *Auth) Revoke(scope, userID string) (bool, error) {
 }
 
 func (a *Auth) updatePermissions(key string, permissions []string) error {
-	data, err := json.Marshal(permissions)
-	if err != nil {
-		return errors.Wrap(err, "failed to encode permissions as JSON")
-	}
-
-	err = a.memory.Set(key, string(data))
+	err := a.store.Set(key, permissions)
 	if err != nil {
 		return errors.Wrap(err, "failed to update user permissions")
 	}

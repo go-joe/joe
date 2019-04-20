@@ -15,20 +15,15 @@ import (
 )
 
 // The Brain contains the core logic of a Bot by implementing an event handling
-// system that dispatches events to all registered event handlers. Additionally
-// the Brain is directly connected to the Memory of the bot to manage concurrent
-// access as well as to emit the BrainMemoryEvent if memory is created, edited
-// or deleted on the brain.
+// system that dispatches events to all registered event handlers.
 type Brain struct {
 	logger *zap.Logger
-
-	mu     sync.RWMutex // mu protects concurrent access to the Memory as well as registering new handlers
-	memory Memory
 
 	eventsInput chan Event // input for any new events, the Brain ensures that callers never block when writing to it
 	eventsLoop  chan Event // used in Brain.HandleEvents() to actually process the events
 	shutdown    chan shutdownRequest
 
+	mu             sync.RWMutex // mu protects concurrent access to the handlers
 	handlers       map[reflect.Type][]eventHandler
 	handlerTimeout time.Duration // zero means no timeout, defaults to one minute
 
@@ -55,11 +50,8 @@ type shutdownRequest struct {
 // of a concrete event type.
 type eventHandler func(context.Context, reflect.Value) error
 
-// NewBrain creates a new robot Brain. By default the Brain will use a Memory
-// implementation that stores all keys and values directly in memory. You can
-// change the memory implementation afterwards by simply assigning to
-// Brain.Memory. If the passed logger is nil it will fallback to the
-// zap.NewNop() logger.
+// NewBrain creates a new robot Brain. If the passed logger is nil it will
+// fallback to the zap.NewNop() logger.
 func NewBrain(logger *zap.Logger) *Brain {
 	if logger == nil {
 		logger = zap.NewNop()
@@ -67,7 +59,6 @@ func NewBrain(logger *zap.Logger) *Brain {
 
 	b := &Brain{
 		logger:         logger,
-		memory:         newInMemory(),
 		eventsInput:    make(chan Event),
 		eventsLoop:     make(chan Event),
 		shutdown:       make(chan shutdownRequest),
@@ -78,13 +69,6 @@ func NewBrain(logger *zap.Logger) *Brain {
 	b.consumeEvents()
 
 	return b
-}
-
-// SetMemory assigns a different Memory to the Brain.
-func (b *Brain) SetMemory(m Memory) {
-	b.mu.Lock()
-	b.memory = m
-	b.mu.Unlock()
 }
 
 func (b *Brain) isHandlingEvents() bool {
@@ -128,7 +112,7 @@ func (b *Brain) isClosed() bool {
 //
 //     b := NewBrain(nil)
 //     b.RegisterHandler(func(evt CustomEvent) {
-//         // TODO
+//         …
 //     })
 func (b *Brain) RegisterHandler(fun interface{}) {
 	err := b.registerHandler(fun)
@@ -392,60 +376,6 @@ func (b *Brain) Shutdown(ctx context.Context) {
 
 	b.shutdown <- req
 	<-req.callback
-}
-
-// Set is a wrapper around the Brains Memory.Set function to allow concurrent
-// access and emit the corresponding BrainMemoryEvent.
-func (b *Brain) Set(key, value string) error {
-	b.mu.Lock()
-	b.logger.Debug("Writing data to memory", zap.String("key", key))
-	err := b.memory.Set(key, value)
-	b.mu.Unlock()
-
-	b.Emit(BrainMemoryEvent{Operation: "set", Key: key, Value: value})
-	return err
-}
-
-// Get is a wrapper around the Brains Memory.Get function to allow concurrent
-// access and emit the corresponding BrainMemoryEvent.
-func (b *Brain) Get(key string) (string, bool, error) {
-	b.mu.RLock()
-	b.logger.Debug("Retrieving data from memory", zap.String("key", key))
-	value, ok, err := b.memory.Get(key)
-	b.mu.RUnlock()
-
-	b.Emit(BrainMemoryEvent{Operation: "get", Key: key, Value: value})
-	return value, ok, err
-}
-
-// Delete is a wrapper around the Brains Memory.Delete function to allow
-// concurrent access and emit the corresponding BrainMemoryEvent.
-func (b *Brain) Delete(key string) (bool, error) {
-	b.mu.Lock()
-	b.logger.Debug("Deleting data from memory", zap.String("key", key))
-	ok, err := b.memory.Delete(key)
-	b.mu.Unlock()
-
-	b.Emit(BrainMemoryEvent{Operation: "del", Key: key})
-	return ok, err
-}
-
-// Memories is a wrapper around the Brains Memory.Memories function to allow
-// concurrent access.
-func (b *Brain) Memories() (map[string]string, error) {
-	b.mu.RLock()
-	data, err := b.memory.Memories()
-	b.mu.RUnlock()
-
-	return data, err
-}
-
-// Close shuts down the Memory of the brain.
-func (b *Brain) Close() error {
-	b.mu.Lock()
-	err := b.memory.Close()
-	b.mu.Unlock()
-	return err
 }
 
 func checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withContext bool, err error) {

@@ -26,6 +26,7 @@ type Bot struct {
 	Name    string
 	Adapter Adapter
 	Brain   *Brain
+	Store   *Storage
 	Auth    *Auth
 	Logger  *zap.Logger
 
@@ -48,7 +49,7 @@ func (f ModuleFunc) Apply(conf *Config) error {
 }
 
 // New creates a new Bot and initializes it with the given Modules and Options.
-// By default the Bot will use an in-memory in Brain and a CLI adapter that
+// By default the Bot will use an in-memory Storage and a CLI adapter that
 // reads messages from stdin and writes to stdout.
 //
 // The modules can be used to change the Memory or Adapter or register other new
@@ -78,8 +79,9 @@ func New(name string, modules ...Module) *Bot {
 	ctx := newContext(modules)
 	logger := newLogger(modules)
 	brain := NewBrain(logger.Named("brain"))
+	store := NewStorage(logger.Named("memory"))
 
-	conf := NewConfig(logger, brain, NewCLIAdapter(name, logger))
+	conf := NewConfig(logger, brain, store, NewCLIAdapter(name, logger))
 	conf.Context = ctx
 	conf.Name = name
 	conf.HandlerTimeout = brain.handlerTimeout
@@ -100,8 +102,9 @@ func New(name string, modules ...Module) *Bot {
 		ctx:     conf.Context,
 		Logger:  conf.logger,
 		Adapter: conf.adapter,
-		Auth:    NewAuth(conf.logger, brain),
+		Auth:    NewAuth(conf.logger, store),
 		Brain:   brain,
+		Store:   store,
 		initErr: multierr.Combine(conf.errs...),
 	}
 }
@@ -206,7 +209,7 @@ func (b *Bot) Run() error {
 		b.Logger.Info("Error while closing adapter", zap.Error(err))
 	}
 
-	err = b.Brain.Close() // TODO: should this happen in Brain.Shutdown(…) ?
+	err = b.Store.Close()
 	if err != nil {
 		b.Logger.Info("Error while closing memory", zap.Error(err))
 	}
