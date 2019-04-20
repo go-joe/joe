@@ -9,6 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// A Storage provides a convenient interface to a Memory implementation. It is
+// responsible for how the actual key value data is encoded and provides
+// concurrent access as well as logging.
+//
+// The default Storage that is returned by joe.NewStorage() encodes values as
+// JSON and stores them in-memory.
 type Storage struct {
 	logger  *zap.Logger
 	mu      sync.RWMutex
@@ -28,6 +34,9 @@ type Memory interface {
 	Close() error
 }
 
+// A MemoryEncoder is used to encode and decode any values that are stored in
+// the Memory. The default implementation that is used by the Storage uses a
+// JSON encoding.
 type MemoryEncoder interface {
 	Encode(value interface{}) ([]byte, error)
 	Decode(data []byte, target interface{}) error
@@ -39,6 +48,9 @@ type inMemory struct {
 
 type jsonEncoder struct{}
 
+// NewStorage creates a new Storage instance that encodes values as JSON and
+// stores them in-memory. You can change the memory and encoding via the
+// provided setters.
 func NewStorage(logger *zap.Logger) *Storage {
 	return &Storage{
 		logger:  logger,
@@ -71,6 +83,8 @@ func (s *Storage) Keys() ([]string, error) {
 	return keys, err
 }
 
+// Set encodes the given data and stores it in the Memory that is managed by the
+// Storage.
 func (s *Storage) Set(key string, value interface{}) error {
 	data, err := s.encoder.Encode(value)
 	if err != nil {
@@ -85,6 +99,11 @@ func (s *Storage) Set(key string, value interface{}) error {
 	return err
 }
 
+// Get retrieves the value under the requested key and decodes it into the
+// passed "value" argument which must be a pointer. The boolean return value
+// indicates if the value actually existed in the Memory and is false if it did
+// not. It is legal to pass <nil> as the value if you only want to check if
+// the given key exists but you do not actually care about the concrete value.
 func (s *Storage) Get(key string, value interface{}) (bool, error) {
 	s.mu.RLock()
 	s.logger.Debug("Retrieving data from memory", zap.String("key", key))
@@ -106,6 +125,8 @@ func (s *Storage) Get(key string, value interface{}) (bool, error) {
 	return true, nil
 }
 
+// Delete removes a key and its associated value from the memory. The boolean
+// return value indicates if the key existed or not.
 func (s *Storage) Delete(key string) (bool, error) {
 	s.mu.Lock()
 	s.logger.Debug("Deleting data from memory", zap.String("key", key))
@@ -115,6 +136,7 @@ func (s *Storage) Delete(key string) (bool, error) {
 	return ok, err
 }
 
+// Close closes the Memory that is managed by this Storage.
 func (s *Storage) Close() error {
 	s.mu.Lock()
 	err := s.memory.Close()

@@ -57,7 +57,8 @@ func (c *Config) SetMemory(mem Memory) {
 	c.store.SetMemory(mem)
 }
 
-// SetMemory can be used to change the MemoryEncoder implementation of the bot.
+// SetMemoryEncoder can be used to change the MemoryEncoder implementation of
+// the bot.
 func (c *Config) SetMemoryEncoder(enc MemoryEncoder) {
 	c.store.SetMemoryEncoder(enc)
 }
