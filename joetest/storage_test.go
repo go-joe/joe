@@ -1,6 +1,7 @@
 package joetest
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -26,3 +27,68 @@ func TestStorage(t *testing.T) {
 		store.AssertEquals(c.key, c.value)
 	}
 }
+
+func TestStorage_AssertEqualsError(t *testing.T) {
+	mock := new(mockT)
+	store := NewStorage(mock)
+	store.AssertEquals("does-not-exist", "xxx")
+
+	if len(mock.Errors) != 1 {
+		t.Fatal("Expected one error but got none")
+	}
+
+	expected := `Expected storage to contain key "does-not-exist" but it does not`
+	if mock.Errors[0] != expected {
+		t.Errorf("Expected errors %q but got %q", expected, mock.Errors[0])
+	}
+
+	store.MustSet("test", "foo")
+	store.AssertEquals("test", "bar")
+
+	if len(mock.Errors) != 2 {
+		t.Fatalf("Expected one error but got %d", len(mock.Errors))
+	}
+
+	expected = `Value of key "test" does not equal expected value
+got:  "foo"
+want: "bar"`
+	if mock.Errors[1] != expected {
+		t.Errorf("Expected errors %q but got %q", expected, mock.Errors[1])
+	}
+}
+
+type mockT struct {
+	Errors []string
+	failed bool
+}
+
+func (m *mockT) Logf(string, ...interface{}) {}
+
+func (m *mockT) Errorf(msg string, args ...interface{}) {
+	if len(args) > 0 {
+		msg = fmt.Sprintf(msg, args...)
+	}
+	m.Errors = append(m.Errors, msg)
+}
+
+func (m *mockT) Fail() {
+	m.failed = true
+}
+
+func (m *mockT) Failed() bool {
+	return m.failed
+}
+
+func (m *mockT) Fatal(args ...interface{}) {
+	m.failed = true
+}
+
+func (*mockT) Name() string {
+	return "mock"
+}
+
+func (m *mockT) FailNow() {
+	m.Failed()
+}
+
+func (*mockT) Helper() {}

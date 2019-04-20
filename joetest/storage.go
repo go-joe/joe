@@ -49,6 +49,10 @@ func (s *Storage) AssertEquals(key string, expectedVal interface{}) {
 
 	actualVal := actual.Elem().Interface()
 	if !reflect.DeepEqual(expectedVal, actualVal) {
-		s.T.Errorf("Value of key %q does not equal expected value\ngot:  %#v\nwant: %#v", key, actualVal, expectedVal)
+		s.T.Errorf("Value of key %q does not equal expected value\ngot:  %#v\nwant: %#v",
+			key,
+			actualVal,
+			expectedVal,
+		)
 	}
 }
