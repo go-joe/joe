@@ -15,13 +15,15 @@ Joe is a library used to write chat bots in [the Go programming language][go].
 It is very much inspired by the awesome [Hubot][hubot] framework developed by the
 folks at Github and brings its power to people who want to implement chat bots using Go.
 
+## Getting Started
+
 **THIS SOFTWARE IS STILL IN ALPHA AND THERE ARE NO GUARANTEES REGARDING API STABILITY YET.**
 
-## Getting Started
+All significant (e.g. breaking) changes are documented in the [CHANGELOG.md](CHANGELOG.md).
 
 Joe is packaged using the new [Go modules][go-modules]. You can get joe via:
 
-```bash
+```
 go get github.com/go-joe/joe
 ```
 
@@ -32,6 +34,7 @@ a _Handler_ function if it sees a message directed to the bot that matches a giv
 
 For example a bot that responds to a message "ping" with the answer "PONG" looks like this:
 
+[embedmd]:# (_examples/01_minimal/main.go)
 ```go
 package main
 
@@ -61,21 +64,21 @@ routes new messages or custom events (e.g. receiving an HTTP call) to the
 corresponding registered _handler_ functions.
 
 By default `joe.New(…)` uses the CLI adapter which makes the bot read messages
-from stdin and respond on stdout. Additionally the brain will store key value
+from stdin and respond on stdout. Additionally the bot will store key value
 data in-memory which means it will forget anything you told it when it is restarted.
 This default setup is useful for local development without any dependencies but
 you will quickly want to add other _Modules_ to extend the bots capabilities.
 
 For instance we can extend the previous example to connect the Bot with a Slack
-workspace and store key value data in Redis. To allow the message handlers to
+workspace and store key-value data in Redis. To allow the message handlers to
 access the memory we define them as functions on a custom `ExampleBot`type which
 embeds the `joe.Bot`.
 
+[embedmd]:# (_examples/02_useful/main.go)
 ```go
 package main
 
 import (
-	"strings"
 	"github.com/go-joe/joe"
 	"github.com/go-joe/redis-memory"
 	"github.com/go-joe/slack-adapter"
@@ -106,12 +109,13 @@ func main() {
 func (b *ExampleBot) Remember(msg joe.Message) error {
 	key, value := msg.Matches[0], msg.Matches[1]
 	msg.Respond("OK, I'll remember %s is %s", key, value)
-	return b.Brain.Set(key, value)
+	return b.Store.Set(key, value)
 }
 
 func (b *ExampleBot) WhatIs(msg joe.Message) error {
 	key := msg.Matches[0]
-	value, ok, err := b.Brain.Get(key)
+	var value string
+	ok, err := b.Store.Get(key, &value)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve key %q from brain", key)
 	}
@@ -141,11 +145,13 @@ Implementing custom events is easy because you can emit any type as event and
 register handlers that match only this type. What this exactly means is best
 demonstrated with another example:
 
+[embedmd]:# (_examples/03_custom_events/main.go)
 ```go
 package main
 
 import (
 	"time"
+
 	"github.com/go-joe/joe"
 )
 
@@ -213,6 +219,7 @@ could also allow even more general access to everything in the api via the
 
 Scopes can be granted statically in code or dynamically in a handler like this:
 
+[embedmd]:# (_examples/04_auth/main.go)
 ```go
 package main
 
@@ -260,12 +267,15 @@ integrations as well. Since this is such a dominant use-case we already provide
 the [`github.com/go-joe/http-server`][joe-http] module to make it easy for
 everybody to write their own custom integrations.
 
+[embedmd]:# (_examples/05_http/main.go)
 ```go
 package main
 
 import (
+	"context"
 	"errors"
-	"github.com/go-joe/http-server"
+
+	joehttp "github.com/go-joe/http-server"
 	"github.com/go-joe/joe"
 )
 
@@ -320,8 +330,10 @@ conduct and on the process for submitting pull requests to this repository.
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available,
-see the [tags on this repository][tags]. 
+**THIS SOFTWARE IS STILL IN ALPHA AND THERE ARE NO GUARANTEES REGARDING API STABILITY YET.**
+
+After the v1.0 release we plan to use [SemVer](http://semver.org/) for versioning.
+For the versions available, see the [tags on this repository][tags]. 
 
 ## Authors
 
@@ -336,6 +348,7 @@ This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICE
 ## Acknowledgments
 
 - [Hubot][hubot] and its great community for the inspiration
+- [embedmd][embedmd] for a cool tool to embed source code in markdown files
 
 [go]: https://golang.org
 [hubot]: https://hubot.github.com/
@@ -343,3 +356,4 @@ This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICE
 [joe-http]: https://github.com/go-joe/http-server
 [tags]: https://github.com/go-joe/joe/tags
 [contributors]: https://github.com/github.com/go-joe/joe/contributors
+[embedmd]: https://github.com/campoy/embedmd
