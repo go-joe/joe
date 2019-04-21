@@ -16,3 +16,4 @@ check: $(EXAMPLES)
 	@gofmt -d "$@"
 	@test -z "$$(gofmt -l "$@")" || (echo "ERROR: bad source code formatting in $@" && false)
 	cd "$(dir $@)" && go build -o /dev/null -v
+	cd "$(dir $@)" && go mod tidy

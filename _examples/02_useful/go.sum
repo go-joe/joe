@@ -2,8 +2,8 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
-github.com/go-joe/redis-memory v0.3.0 h1:N5zxEEQyr1pNdgOXM0f31hLsueiQIFzZxRID9bA6Hxo=
-github.com/go-joe/redis-memory v0.3.0/go.mod h1:EZ4ASeQK1dC4xY7ReMNPLUVbXti6Czrklr2+fFxzZXo=
+github.com/go-joe/redis-memory v0.3.1 h1:VVTx30gBwgek1sVyZxQYmzAKnePADkCpw7D8MFtHFRI=
+github.com/go-joe/redis-memory v0.3.1/go.mod h1:+LePTzRZ4IGIH6zrqPkGRcnePIOSlhIpDwa9FQJLuaQ=
 github.com/go-joe/slack-adapter v0.6.0 h1:wtIvvFpYOb8ic3iHMkxvQmtvvBjKRemGMGsa1sbCJoI=
 github.com/go-joe/slack-adapter v0.6.0/go.mod h1:IWEd5WJwa0TxDxzNajm9V+a3o8qPmzkIj93jYwW/+wI=
 github.com/go-redis/redis v6.15.2+incompatible h1:9SpNVG76gr6InJGxoZ6IuuxaCOQwDAhzyXg+Bs+0Sb4=
