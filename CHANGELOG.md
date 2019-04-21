@@ -14,6 +14,16 @@ Once we reach the v1.0 release, this project will adhere to [Semantic Versioning
 - Add Auth.Revoke(…) to remove permissions
 - Fix flaky unit test TestBrain_Memory
 - Fix flaky TestCLIAdapter_Register test
+- Add new `Storage` type which manages encoding/decoding, concurrent access and logging for a `Memory`
+- Factor out `Memory` related logic from Brain into new `Storage` type
+    - Removed `Brain.SetMemory(…)`, `Brain.Set(…)`, `Brain.Get(…)`, `Brain.Delete(…)`, `Brain.Memories(…)`, `Brain.Close(…)`
+    - All functions above except `Brain.Memories(…)` are now available as functions on the `Bot.Store` field
+- The `Auth` type no longer uses the `Memory` interface but instead requires an instance of the new `Storage` type
+- Removed the `BrainMemoryEvent` without replacement
+- Add `joetest.Storage` type to streamline making assertions on a bots storage/memory
+- Change the `Memory` interface to treat values as `[]byte` and not `string`
+- Remove `Memories()` function from `Memory` interface and instead add a `Keys()` function  
+- `NewConfig(…)` now requires an instance of a `Storage`
 
 ## [v0.7.0] - 2019-04-18
 - Add ReceiveMessageEvent.Data field to allow using the underlying message type of the adapters
