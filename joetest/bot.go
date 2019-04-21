@@ -14,9 +14,10 @@ import (
 // Bot wraps a *joe.Bot for unit testing.
 type Bot struct {
 	*joe.Bot
-	T      TestingT
-	Input  io.Writer
-	Output io.Reader
+	T       TestingT
+	Input   io.Writer
+	Output  io.Reader
+	Timeout time.Duration // defaults to 1s
 
 	runErr chan error
 }
@@ -35,10 +36,11 @@ func NewBot(t TestingT, modules ...joe.Module) *Bot {
 	output := new(bytes.Buffer)
 
 	b := &Bot{
-		T:      t,
-		Input:  input,
-		Output: output,
-		runErr: make(chan error, 1), // buffered so we can return from Bot.Run without blocking
+		T:       t,
+		Input:   input,
+		Output:  output,
+		Timeout: time.Second,
+		runErr:  make(chan error, 1), // buffered so we can return from Bot.Run without blocking
 	}
 
 	testAdapter := joe.ModuleFunc(func(conf *joe.Config) error {
@@ -73,7 +75,7 @@ func (b *Bot) EmitSync(event interface{}) {
 	select {
 	case <-done:
 		// ok, cool
-	case <-time.After(time.Second):
+	case <-time.After(b.Timeout):
 		b.T.Errorf("EmitSync timed out")
 		b.T.FailNow()
 	}
@@ -118,11 +120,19 @@ func (b *Bot) Run() error {
 // returned an error it is passed to the Errorf function of the TestingT that
 // was used to create the Bot.
 func (b *Bot) Stop() {
-	ctx := context.Background()
-	b.Brain.Shutdown(ctx)
-	err := <-b.runErr
-	if err != nil {
-		b.T.Errorf("Bot.Run() returned an error: %v", err)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go b.Brain.Shutdown(ctx)
+
+	select {
+	case err := <-b.runErr:
+		if err != nil {
+			b.T.Errorf("Bot.Run() returned an error: %v", err)
+		}
+	case <-time.After(b.Timeout):
+		b.T.Errorf("Stop timed out")
+		b.T.FailNow()
 	}
 }
 
