@@ -17,17 +17,21 @@ type Config struct {
 
 	logger  *zap.Logger
 	brain   *Brain
+	store   *Storage
 	adapter Adapter
 	errs    []error
 }
 
-// NewConfig creates a new Config. This function is mainly useful for unit
-// testing but is normally not required to create or use a bot.
-func NewConfig(logger *zap.Logger, brain *Brain, adapter Adapter) Config {
+// NewConfig creates a new Config that is used to setup the underlying
+// components of a Bot. For the typical use case you do not have to create a
+// Config yourself but rather configure a Bot by passing the corresponding
+// Modules to joe.New(…).
+func NewConfig(logger *zap.Logger, brain *Brain, store *Storage, adapter Adapter) Config {
 	return Config{
 		adapter: adapter,
 		logger:  logger,
 		brain:   brain,
+		store:   store,
 	}
 }
 
@@ -48,9 +52,15 @@ func (c *Config) Logger(name string) *zap.Logger {
 	return c.logger.Named(name)
 }
 
-// SetMemory can be used to change the Memory implementation of the bots Brain.
+// SetMemory can be used to change the Memory implementation of the bot.
 func (c *Config) SetMemory(mem Memory) {
-	c.brain.SetMemory(mem)
+	c.store.SetMemory(mem)
+}
+
+// SetMemoryEncoder can be used to change the MemoryEncoder implementation of
+// the bot.
+func (c *Config) SetMemoryEncoder(enc MemoryEncoder) {
+	c.store.SetMemoryEncoder(enc)
 }
 
 // SetAdapter can be used to change the Adapter implementation of the Bot.

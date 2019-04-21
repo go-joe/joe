@@ -29,11 +29,3 @@ type UserTypingEvent struct {
 	User    User
 	Channel string
 }
-
-// The BrainMemoryEvent is emitted whenever the Brain reads, writes or deletes
-// a single key-value pair from the brain.
-type BrainMemoryEvent struct {
-	Key       string
-	Value     string
-	Operation string // "set", "get" or "del"
-}

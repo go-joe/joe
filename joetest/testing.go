@@ -8,6 +8,7 @@ type TestingT interface {
 	Errorf(string, ...interface{})
 	Fail()
 	Failed() bool
+	Fatal(args ...interface{})
 	Name() string
 	FailNow()
 	Helper()

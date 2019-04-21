@@ -11,8 +11,10 @@ import (
 func TestConfig(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	brain := NewBrain(logger)
+	store := NewStorage(logger)
 	conf := Config{
 		brain:  brain,
+		store:  store,
 		logger: logger,
 	}
 
@@ -25,7 +27,11 @@ func TestConfig(t *testing.T) {
 
 	mem := newInMemory()
 	conf.SetMemory(mem)
-	assert.Equal(t, mem, brain.memory)
+	assert.Equal(t, mem, store.memory)
+
+	enc := jsonEncoder{}
+	conf.SetMemoryEncoder(enc)
+	assert.Equal(t, enc, store.encoder)
 
 	conf.RegisterHandler(func(InitEvent) {})
 }

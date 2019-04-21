@@ -261,51 +261,6 @@ func TestBrain_HandlerPanics(t *testing.T) {
 	}
 }
 
-func TestBrain_Memory(t *testing.T) {
-	logger := zaptest.NewLogger(t)
-	b := NewBrain(logger)
-
-	var events []BrainMemoryEvent
-	b.RegisterHandler(func(evt BrainMemoryEvent) {
-		events = append(events, evt)
-	})
-
-	waitInit := make(chan bool)
-	b.RegisterHandler(func(InitEvent) {
-		waitInit <- true
-	})
-
-	go b.HandleEvents()
-	<-waitInit // wait until bot has actually started
-
-	require.NoError(t, b.Set("foo", "bar"))
-	require.NoError(t, b.Set("hello", "world"))
-
-	val, ok, err := b.Get("foo")
-	require.NoError(t, err)
-	assert.True(t, ok)
-	assert.Equal(t, "bar", val)
-
-	mem, err := b.Memories()
-	require.NoError(t, err)
-	assert.Equal(t, map[string]string{"foo": "bar", "hello": "world"}, mem)
-
-	ok, err = b.Delete("hello")
-	require.NoError(t, err)
-	assert.True(t, ok)
-
-	b.Shutdown(ctx)
-
-	expectedEvents := []BrainMemoryEvent{
-		{Operation: "set", Key: "foo", Value: "bar"},
-		{Operation: "set", Key: "hello", Value: "world"},
-		{Operation: "get", Key: "foo", Value: "bar"},
-		{Operation: "del", Key: "hello"},
-	}
-
-	assert.Equal(t, expectedEvents, events)
-}
-
 func TestBrain_Shutdown_WithoutStart(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	b := NewBrain(logger)
