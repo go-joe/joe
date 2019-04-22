@@ -35,7 +35,7 @@ type Bot struct {
 }
 
 // A Module is an optional Bot extension that can add new capabilities such as
-// a different Brain.Memory implementation or a different Adapter.
+// a different Memory implementation or Adapter.
 type Module interface {
 	Apply(*Config) error
 }
