@@ -226,7 +226,7 @@ func (b *Bot) Run() error {
 // Message.Matches.
 //
 // If you need complete control over the regular expression, e.g. because you
-// want the patter to match only a substring of the message but not all of it,
+// want the pattern to match only a substring of the message but not all of it,
 // you can use Bot.RespondRegex(…). For even more control you can also directly
 // use Brain.RegisterHandler(…) with a function that accepts ReceiveMessageEvent
 // instances.
@@ -245,6 +245,12 @@ func (b *Bot) RespondRegex(expr string, fun func(Message) error) {
 	if expr == "" {
 		return
 	}
+
+	// Add information for the "help" command before modifying the expression further
+	b.Brain.Emit(RegisterCommandEvent{
+		Expression: expr,
+		Function:   fun,
+	})
 
 	if expr[0] == '^' {
 		// String starts with the "^" anchor but does it also have the prefix
@@ -279,15 +285,11 @@ func (b *Bot) RespondRegex(expr string, fun func(Message) error) {
 		// that might match the received message.
 		FinishEventContent(ctx)
 
+		evt.Adapter = b.Adapter // make sure we always have an adapter set
 		return fun(Message{
-			Context:  ctx,
-			ID:       evt.ID,
-			Text:     evt.Text,
-			AuthorID: evt.AuthorID,
-			Data:     evt.Data,
-			Channel:  evt.Channel,
-			Matches:  matches[1:],
-			adapter:  b.Adapter,
+			ReceiveMessageEvent: evt,
+			Context:             ctx,
+			Matches:             matches[1:],
 		})
 	})
 }

@@ -99,7 +99,12 @@ func (a *CLIAdapter) loop(brain *Brain) {
 			}
 
 			lines = nil // disable this case and wait for the callback
-			brain.Emit(ReceiveMessageEvent{Text: msg, AuthorID: a.Author}, callbackFun)
+			evt := ReceiveMessageEvent{
+				Text:     msg,
+				AuthorID: a.Author,
+				Adapter:  a,
+			}
+			brain.Emit(evt, callbackFun)
 
 		case <-callback:
 			// This case is executed after all ReceiveMessageEvent handlers have

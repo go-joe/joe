@@ -11,7 +11,7 @@ import (
 
 func TestMessage_Respond(t *testing.T) {
 	a := new(MockAdapter)
-	msg := Message{adapter: a, Channel: "test"}
+	msg := Message{ReceiveMessageEvent: ReceiveMessageEvent{Adapter: a, Channel: "test"}}
 
 	a.On("Send", "Hello world, The Answer is 42", "test").Return(nil)
 	msg.Respond("Hello %s, The Answer is %d", "world", 42)
@@ -20,7 +20,7 @@ func TestMessage_Respond(t *testing.T) {
 
 func TestMessage_RespondE(t *testing.T) {
 	a := new(MockAdapter)
-	msg := Message{adapter: a, Channel: "test"}
+	msg := Message{ReceiveMessageEvent: ReceiveMessageEvent{Adapter: a, Channel: "test"}}
 
 	err := errors.New("a wild issue occurred")
 	a.On("Send", "Hello world", "test").Return(err)
@@ -32,7 +32,7 @@ func TestMessage_RespondE(t *testing.T) {
 
 func TestMessage_React_NotImplemented(t *testing.T) {
 	a := new(MockAdapter)
-	msg := Message{adapter: a}
+	msg := Message{ReceiveMessageEvent: ReceiveMessageEvent{Adapter: a}}
 
 	err := msg.React(reactions.Thumbsup)
 	assert.Equal(t, ErrNotImplemented, err)
@@ -41,7 +41,7 @@ func TestMessage_React_NotImplemented(t *testing.T) {
 
 func TestMessage_React(t *testing.T) {
 	a := new(ExtendedMockAdapter)
-	msg := Message{adapter: a}
+	msg := Message{ReceiveMessageEvent: ReceiveMessageEvent{Adapter: a}}
 
 	err := errors.New("this clearly failed")
 	a.On("React", reactions.Thumbsup, msg).Return(err)

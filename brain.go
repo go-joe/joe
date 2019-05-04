@@ -142,15 +142,15 @@ func (b *Brain) isClosed() bool {
 // will silently be ignored if you register an invalid handler when the bot is
 // already running.
 func (b *Brain) RegisterHandler(fun interface{}) {
-	err := b.registerHandler(fun)
+	caller := firstExternalCaller()
+	err := b.registerHandler(fun, caller)
 	if err != nil {
-		caller := firstExternalCaller()
 		err = errors.Wrap(err, caller)
 		b.registrationErrs = append(b.registrationErrs, err)
 	}
 }
 
-func (b *Brain) registerHandler(fun interface{}) error {
+func (b *Brain) registerHandler(fun interface{}, caller string) error {
 	handler := reflect.ValueOf(fun)
 	handlerType := handler.Type()
 	if handlerType.Kind() != reflect.Func {
@@ -168,6 +168,7 @@ func (b *Brain) registerHandler(fun interface{}) error {
 	}
 
 	b.logger.Debug("Registering new event handler",
+		zap.String("caller", caller),
 		zap.Stringer("event_type", evtType),
 	)
 
@@ -496,7 +497,11 @@ func firstExternalCaller() string {
 	frames := runtime.CallersFrames(callers)
 	for frame, more := frames.Next(); more; frame, more = frames.Next() {
 		if !strings.HasPrefix(frame.Function, "github.com/go-joe/joe.") {
-			return fmt.Sprintf("%s:%d", frame.File, frame.Line)
+			caller := fmt.Sprintf("%s:%d", frame.File, frame.Line)
+			// When we running binaries you could also trim this information at
+			// compile time via:
+			// go build -gcflags "all=-trimpath=$PWD" .
+			return caller
 		}
 	}
 
