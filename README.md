@@ -316,6 +316,7 @@ open a pull request.
 - File Memory: https://github.com/go-joe/file-memory
 - HTTP Server: https://github.com/go-joe/http-server
 - Cron Jobs: https://github.com/go-joe/cron
+- Rocket.Chat Adapter: https://github.com/dwmunster/rocket-adapter
 
 ## Built With
 
