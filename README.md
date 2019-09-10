@@ -317,6 +317,7 @@ open a pull request.
 - HTTP Server: https://github.com/go-joe/http-server
 - Cron Jobs: https://github.com/go-joe/cron
 - Rocket.Chat Adapter: https://github.com/dwmunster/rocket-adapter
+- Telegram Adapter: https://github.com/robertgzr/joe-telegram-adapter
 
 ## Built With
 
