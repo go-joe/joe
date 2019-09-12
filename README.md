@@ -318,6 +318,7 @@ open a pull request.
 - Cron Jobs: https://github.com/go-joe/cron
 - Rocket.Chat Adapter: https://github.com/dwmunster/rocket-adapter
 - Telegram Adapter: https://github.com/robertgzr/joe-telegram-adapter
+- Bolt Memory: https://github.com/robertgzr/joe-bolt-memory
 
 ## Built With
 
