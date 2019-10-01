@@ -319,6 +319,7 @@ open a pull request.
 - Rocket.Chat Adapter: https://github.com/dwmunster/rocket-adapter
 - Telegram Adapter: https://github.com/robertgzr/joe-telegram-adapter
 - Bolt Memory: https://github.com/robertgzr/joe-bolt-memory
+- Sqlite Memory: https://github.com/warmans/sqlite-memory
 
 ## Built With
 
