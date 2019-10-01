@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/go-joe/joe/reactions"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -22,6 +23,12 @@ type Adapter interface {
 	RegisterAt(*Brain)
 	Send(text, channel string) error
 	Close() error
+}
+
+// ReactionAwareAdapter is an optional interface that Adapters can implement if
+// they support reacting to messages with emojis.
+type ReactionAwareAdapter interface {
+	React(reactions.Reaction, Message) error
 }
 
 // The CLIAdapter is the default Adapter implementation that the bot uses if no
@@ -144,6 +151,12 @@ func (a *CLIAdapter) readLines() <-chan string {
 // The channel argument is required by the Adapter interface but is otherwise ignored.
 func (a *CLIAdapter) Send(text, channel string) error {
 	return a.print(text + "\n")
+}
+
+// React implements the optional ReactionAwareAdapter interface by simply
+// printing the given reaction as UTF8 emoji to the CLI.
+func (a *CLIAdapter) React(r reactions.Reaction, msg Message) error {
+	return a.print(r.String() + "\n")
 }
 
 // Close makes the CLIAdapter stop emitting any new events or printing any output.

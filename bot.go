@@ -271,6 +271,7 @@ func (b *Bot) RespondRegex(expr string, fun func(Message) error) {
 
 		return fun(Message{
 			Context:  ctx,
+			ID:       evt.ID,
 			Text:     evt.Text,
 			AuthorID: evt.AuthorID,
 			Data:     evt.Data,
