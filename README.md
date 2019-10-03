@@ -320,6 +320,7 @@ open a pull request.
 - Telegram Adapter: https://github.com/robertgzr/joe-telegram-adapter
 - Bolt Memory: https://github.com/robertgzr/joe-bolt-memory
 - Sqlite Memory: https://github.com/warmans/sqlite-memory
+- IRC Adapter: https://github.com/akrennmair/joe-irc-adapter
 
 ## Built With
 
