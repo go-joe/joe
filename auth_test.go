@@ -253,8 +253,8 @@ func TestAuth_GetUsers(t *testing.T) {
 	auth := joe.NewAuth(logger, store.Storage)
 
 	mustHaveUsers := map[string][]string{
-		"dave": []string{"bot.scopeA", "bot.scopeB"},
-		"john": []string{"bot.scopeC", "bot.scopeD"},
+		"dave": {"bot.scopeA", "bot.scopeB"},
+		"john": {"bot.scopeC", "bot.scopeD"},
 	}
 	for user, perms := range mustHaveUsers {
 		for _, scope := range perms {
@@ -265,7 +265,7 @@ func TestAuth_GetUsers(t *testing.T) {
 	// GetUsers() should return a list of userIDs
 	users, err := auth.GetUsers()
 	require.NoError(t, err)
-	for user, _ := range mustHaveUsers {
+	for user := range mustHaveUsers {
 		require.Contains(t, users, user)
 	}
 }
@@ -276,8 +276,8 @@ func TestAuth_GetUserPermissions(t *testing.T) {
 	auth := joe.NewAuth(logger, store.Storage)
 
 	mustHavePermissions := map[string][]string{
-		"dave": []string{"bot.scopeA", "bot.scopeB"},
-		"john": []string{"bot.scopeC", "bot.scopeD"},
+		"dave": {"bot.scopeA", "bot.scopeB"},
+		"john": {"bot.scopeC", "bot.scopeD"},
 	}
 	for user, perms := range mustHavePermissions {
 		for _, scope := range perms {
