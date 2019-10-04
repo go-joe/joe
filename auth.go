@@ -7,8 +7,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// ErrNotAllowed is returned if the user is not allowed access to a specific scope.
-const ErrNotAllowed = Error("not allowed")
+const (
+	// ErrNotAllowed is returned if the user is not allowed access to a specific scope.
+	ErrNotAllowed = Error("not allowed")
+
+	// PermissionKeyPrefix is a constant prefix appended to a userID
+	PermissionKeyPrefix = "joe.permissions."
+)
 
 // Auth implements logic to add user authorization checks to your bot.
 type Auth struct {
@@ -60,6 +65,42 @@ func (a *Auth) CheckPermission(scope, userID string) error {
 	}
 
 	return ErrNotAllowed
+}
+
+// GetUsers returns a list of userIDs having one or more permission scopes
+func (a *Auth) GetUsers() ([]string, error) {
+	keys, err := a.store.Keys()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load permissions")
+	}
+
+	a.logger.Debug("Retrieving all userIDs")
+
+	var userIDs []string
+	for _, key := range keys {
+		userID, err := a.userFromKey(key)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse userID from key")
+		}
+		userIDs = append(userIDs, userID)
+	}
+
+	return userIDs, nil
+}
+
+// GetUserPermissions returns the permission scopes for a specific user
+func (a *Auth) GetUserPermissions(userID string) ([]string, error) {
+	key := a.permissionsKey(userID)
+	permissions, err := a.loadPermissions(key)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	a.logger.Debug("Retrieving user permissions",
+		zap.String("user_id", userID),
+	)
+
+	return permissions, nil
 }
 
 func (a *Auth) loadPermissions(key string) ([]string, error) {
@@ -188,5 +229,14 @@ func (a *Auth) updatePermissions(key string, permissions []string) error {
 }
 
 func (a *Auth) permissionsKey(userID string) string {
-	return "joe.permissions." + userID
+	return PermissionKeyPrefix + userID
+}
+
+func (a *Auth) userFromKey(key string) (string, error) {
+	if !strings.HasPrefix(key, PermissionKeyPrefix) {
+		return "", errors.New("could not parse userID from key")
+
+	}
+	userID := strings.Replace(key, PermissionKeyPrefix, "", 1)
+	return userID, nil
 }
