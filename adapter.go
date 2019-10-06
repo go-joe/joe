@@ -155,7 +155,7 @@ func (a *CLIAdapter) Send(text, channel string) error {
 
 // React implements the optional ReactionAwareAdapter interface by simply
 // printing the given reaction as UTF8 emoji to the CLI.
-func (a *CLIAdapter) React(r reactions.Reaction, msg Message) error {
+func (a *CLIAdapter) React(r reactions.Reaction, _ Message) error {
 	return a.print(r.String() + "\n")
 }
 
