@@ -72,6 +72,11 @@ issues:
       linters:
         - godox
 
-    - text: "hugeParam: msg is heavy"
+    - text: "hugeParam"
       linters:
         - gocritic
+
+    - text: "should have comment or be unexported"
+      path: "main.go"
+      linters:
+        - golint
