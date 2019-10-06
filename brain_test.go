@@ -375,14 +375,14 @@ func TestBrain_ShutdownContext(t *testing.T) {
 		// ok, seems like shutdown is actually blocked and we can move on
 	}
 
-	t.Log("Cancelling shutdown context")
+	t.Log("Canceling shutdown context")
 	cancel()
 
 	select {
 	case <-shutdownDone:
 		// ok great, lets move on
 	case <-time.After(10 * time.Millisecond):
-		t.Error("Shutdown function did not return even though the context was cancelled")
+		t.Error("Shutdown function did not return even though the context was canceled")
 	}
 
 	// Finally lets release the shutdown event handler and finish the test
