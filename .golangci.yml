@@ -37,7 +37,7 @@ linters:
     - interfacer
 
 service:
-  golangci-lint-version: 1.15.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.19.x # use the fixed version to not introduce new linters unexpectedly
   prepare:
     - GO111MODULE=on go mod vendor # required currently or golangci breaks
 
@@ -62,3 +62,16 @@ issues:
       path: ".+_test\\.go"
       linters:
         - gochecknoglobals
+
+    - text: "Function 'TestBrain_RegisterHandler' is too long"
+      path: ".+_test\\.go"
+      linters:
+        - funlen
+
+    - text: "Line contains TODO/BUG/FIXME"
+      linters:
+        - godox
+
+    - text: "hugeParam: msg is heavy"
+      linters:
+        - gocritic
