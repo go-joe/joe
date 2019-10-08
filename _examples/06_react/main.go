@@ -24,6 +24,9 @@ func MyHandler(msg joe.Message) error {
 		msg.Respond("Sorry but there was an issue attaching a reaction: %v", err)
 	}
 
+	// custom reactions are also possible
+	_ = msg.React(reactions.Reaction{Shortcode: "foo"})
+
 	return err
 }
 
