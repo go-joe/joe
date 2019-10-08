@@ -66,8 +66,8 @@ func (a *Auth) CheckPermission(scope, userID string) error {
 	return ErrNotAllowed
 }
 
-// GetUsers returns a list of userIDs having one or more permission scopes
-func (a *Auth) GetUsers() ([]string, error) {
+// Users returns a list of userIDs having one or more permission scopes
+func (a *Auth) Users() ([]string, error) {
 	keys, err := a.store.Keys()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load permissions")
@@ -87,8 +87,8 @@ func (a *Auth) GetUsers() ([]string, error) {
 	return userIDs, nil
 }
 
-// GetUserPermissions returns the permission scopes for a specific user
-func (a *Auth) GetUserPermissions(userID string) ([]string, error) {
+// UserPermissions returns the permission scopes for a specific user
+func (a *Auth) UserPermissions(userID string) ([]string, error) {
 	key := a.permissionsKey(userID)
 	permissions, err := a.loadPermissions(key)
 	if err != nil {

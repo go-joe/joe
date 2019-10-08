@@ -263,7 +263,7 @@ func TestAuth_GetUsers(t *testing.T) {
 	}
 
 	// GetUsers() should return a list of userIDs
-	users, err := auth.GetUsers()
+	users, err := auth.Users()
 	require.NoError(t, err)
 	for user := range mustHaveUsers {
 		require.Contains(t, users, user)
@@ -287,7 +287,7 @@ func TestAuth_GetUserPermissions(t *testing.T) {
 
 	// GetUserPermissions() should return all permission scopes for a user
 	for _, user := range []string{"dave", "john"} {
-		permissions, err := auth.GetUserPermissions(user)
+		permissions, err := auth.UserPermissions(user)
 		require.NoError(t, err)
 		for _, scope := range permissions {
 			err = auth.CheckPermission(scope, user)
