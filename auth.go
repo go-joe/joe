@@ -89,15 +89,15 @@ func (a *Auth) Users() ([]string, error) {
 
 // UserPermissions returns the permission scopes for a specific user
 func (a *Auth) UserPermissions(userID string) ([]string, error) {
+	a.logger.Debug("Retrieving user permissions",
+		zap.String("user_id", userID),
+	)
+	
 	key := a.permissionsKey(userID)
 	permissions, err := a.loadPermissions(key)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	a.logger.Debug("Retrieving user permissions",
-		zap.String("user_id", userID),
-	)
 
 	return permissions, nil
 }
