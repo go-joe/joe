@@ -11,8 +11,7 @@ const (
 	// ErrNotAllowed is returned if the user is not allowed access to a specific scope.
 	ErrNotAllowed = Error("not allowed")
 
-	// PermissionKeyPrefix is a constant prefix appended to a userID
-	PermissionKeyPrefix = "joe.permissions."
+	permissionKeyPrefix = "joe.permissions."
 )
 
 // Auth implements logic to add user authorization checks to your bot.
@@ -229,14 +228,14 @@ func (a *Auth) updatePermissions(key string, permissions []string) error {
 }
 
 func (a *Auth) permissionsKey(userID string) string {
-	return PermissionKeyPrefix + userID
+	return permissionKeyPrefix + userID
 }
 
 func (a *Auth) userFromKey(key string) (string, error) {
-	if !strings.HasPrefix(key, PermissionKeyPrefix) {
+	if !strings.HasPrefix(key, permissionKeyPrefix) {
 		return "", errors.New("could not parse userID from key")
 
 	}
-	userID := strings.Replace(key, PermissionKeyPrefix, "", 1)
+	userID := strings.Replace(key, permissionKeyPrefix, "", 1)
 	return userID, nil
 }
