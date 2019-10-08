@@ -68,12 +68,12 @@ func (a *Auth) CheckPermission(scope, userID string) error {
 
 // Users returns a list of userIDs having one or more permission scopes
 func (a *Auth) Users() ([]string, error) {
+	a.logger.Debug("Retrieving all userIDs")
+
 	keys, err := a.store.Keys()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load permissions")
 	}
-
-	a.logger.Debug("Retrieving all userIDs")
 
 	var userIDs []string
 	for _, key := range keys {
