@@ -247,7 +247,7 @@ func TestAuth_Revoke_Errors(t *testing.T) {
 	assert.EqualError(t, err, "failed to delete last user permission: not today")
 }
 
-func TestAuth_GetUsers(t *testing.T) {
+func TestAuth_Users(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	store := joetest.NewStorage(t)
 	auth := joe.NewAuth(logger, store.Storage)
@@ -262,15 +262,20 @@ func TestAuth_GetUsers(t *testing.T) {
 		}
 	}
 
-	// GetUsers() should return a list of userIDs
+	// set a non-permission key
+	store.Set("non.permission.key", "not-a-user")
+
+	// Users() should return a list of userIDs
 	users, err := auth.Users()
 	require.NoError(t, err)
+
+	require.Len(t, users, len(mustHaveUsers))
 	for user := range mustHaveUsers {
 		require.Contains(t, users, user)
 	}
 }
 
-func TestAuth_GetUserPermissions(t *testing.T) {
+func TestAuth_UserPermissions(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	store := joetest.NewStorage(t)
 	auth := joe.NewAuth(logger, store.Storage)
@@ -285,7 +290,7 @@ func TestAuth_GetUserPermissions(t *testing.T) {
 		}
 	}
 
-	// GetUserPermissions() should return all permission scopes for a user
+	// UserPermissions() should return all permission scopes for a user
 	for _, user := range []string{"dave", "john"} {
 		permissions, err := auth.UserPermissions(user)
 		require.NoError(t, err)
@@ -294,7 +299,6 @@ func TestAuth_GetUserPermissions(t *testing.T) {
 			require.NoError(t, err)
 		}
 	}
-
 }
 
 type memoryMock struct {

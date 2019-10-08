@@ -77,11 +77,10 @@ func (a *Auth) Users() ([]string, error) {
 
 	var userIDs []string
 	for _, key := range keys {
-		userID, err := a.userFromKey(key)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse userID from key")
+		if strings.HasPrefix(key, permissionKeyPrefix) {
+			userID := strings.TrimPrefix(key, permissionKeyPrefix)
+			userIDs = append(userIDs, userID)
 		}
-		userIDs = append(userIDs, userID)
 	}
 
 	return userIDs, nil
@@ -92,7 +91,7 @@ func (a *Auth) UserPermissions(userID string) ([]string, error) {
 	a.logger.Debug("Retrieving user permissions",
 		zap.String("user_id", userID),
 	)
-	
+
 	key := a.permissionsKey(userID)
 	permissions, err := a.loadPermissions(key)
 	if err != nil {
@@ -229,13 +228,4 @@ func (a *Auth) updatePermissions(key string, permissions []string) error {
 
 func (a *Auth) permissionsKey(userID string) string {
 	return permissionKeyPrefix + userID
-}
-
-func (a *Auth) userFromKey(key string) (string, error) {
-	if !strings.HasPrefix(key, permissionKeyPrefix) {
-		return "", errors.New("could not parse userID from key")
-
-	}
-	userID := strings.Replace(key, permissionKeyPrefix, "", 1)
-	return userID, nil
 }
