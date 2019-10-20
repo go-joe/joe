@@ -252,26 +252,29 @@ func TestAuth_Users(t *testing.T) {
 	store := joetest.NewStorage(t)
 	auth := joe.NewAuth(logger, store.Storage)
 
-	mustHaveUsers := map[string][]string{
+	userPermissions := map[string][]string{
 		"dave": {"bot.scopeA", "bot.scopeB"},
 		"john": {"bot.scopeC", "bot.scopeD"},
 	}
-	for user, perms := range mustHaveUsers {
+
+	for user, perms := range userPermissions {
 		for _, scope := range perms {
-			auth.Grant(scope, user)
+			_, err := auth.Grant(scope, user)
+			require.NoError(t, err)
 		}
 	}
 
-	// set a non-permission key
-	store.Set("non.permission.key", "not-a-user")
+	// Set a non-permission keys to check they are not treated as permission scopes.
+	store.MustSet("non.permission.key", "not-a-user")
+	store.MustSet("almost.joe.permissions.foo", "nice try")
 
-	// Users() should return a list of userIDs
+	// Users() should return our list of user IDs (i.e. "dave" and "john")
 	users, err := auth.Users()
 	require.NoError(t, err)
 
-	require.Len(t, users, len(mustHaveUsers))
-	for user := range mustHaveUsers {
-		require.Contains(t, users, user)
+	assert.Len(t, users, len(userPermissions))
+	for user := range userPermissions {
+		assert.Contains(t, users, user)
 	}
 }
 
@@ -280,23 +283,25 @@ func TestAuth_UserPermissions(t *testing.T) {
 	store := joetest.NewStorage(t)
 	auth := joe.NewAuth(logger, store.Storage)
 
-	mustHavePermissions := map[string][]string{
+	userPermissions := map[string][]string{
 		"dave": {"bot.scopeA", "bot.scopeB"},
 		"john": {"bot.scopeC", "bot.scopeD"},
 	}
-	for user, perms := range mustHavePermissions {
+
+	for user, perms := range userPermissions {
 		for _, scope := range perms {
-			auth.Grant(scope, user)
+			_, err := auth.Grant(scope, user)
+			require.NoError(t, err)
 		}
 	}
 
 	// UserPermissions() should return all permission scopes for a user
-	for _, user := range []string{"dave", "john"} {
+	for user := range userPermissions {
 		permissions, err := auth.UserPermissions(user)
 		require.NoError(t, err)
+
 		for _, scope := range permissions {
-			err = auth.CheckPermission(scope, user)
-			require.NoError(t, err)
+			assert.NoError(t, auth.CheckPermission(scope, user))
 		}
 	}
 }
