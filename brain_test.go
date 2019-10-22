@@ -391,6 +391,75 @@ func TestBrain_ShutdownContext(t *testing.T) {
 	<-callback
 }
 
+// TestBrain_RegisterMultiple registers multiple handlers for the same event and
+// checks they are executed in the order in which they have been registered.
+func TestBrain_RegisterMultiple(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	b := NewBrain(logger)
+
+	type TestEvent struct{}
+
+	var execSequence []string // tracks order of handler execution
+
+	h1 := func(TestEvent) {
+		execSequence = append(execSequence, "h1")
+	}
+	h2 := func(TestEvent) error {
+		execSequence = append(execSequence, "h2")
+		return nil
+	}
+	h3 := func(context.Context, TestEvent) {
+		execSequence = append(execSequence, "h3")
+	}
+	h4 := func(context.Context, TestEvent) error {
+		execSequence = append(execSequence, "h4")
+		return nil
+	}
+
+	b.RegisterHandler(h1)
+	b.RegisterHandler(h2)
+	b.RegisterHandler(h3)
+	b.RegisterHandler(h4)
+	require.Empty(t, b.registrationErrs, "unexpected registration errors")
+
+	go b.HandleEvents()
+	defer b.Shutdown(ctx)
+
+	EmitSync(b, TestEvent{})
+	assert.Equal(t, []string{"h1", "h2", "h3", "h4"}, execSequence)
+}
+
+// TestFinishEventContent tests that handlers can mark an event as processed to
+// avoid later handlers to be executed on the given event.
+func TestFinishEventContent(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	b := NewBrain(logger)
+
+	type TestEvent struct{}
+
+	var h1Executed bool
+	h1 := func(ctx context.Context, evt TestEvent) {
+		h1Executed = true
+		FinishEventContent(ctx)
+	}
+
+	var h2Executed bool
+	h2 := func(TestEvent) {
+		h2Executed = true
+	}
+
+	b.RegisterHandler(h1)
+	b.RegisterHandler(h2)
+	require.Empty(t, b.registrationErrs, "unexpected registration errors")
+
+	go b.HandleEvents()
+	defer b.Shutdown(ctx)
+
+	EmitSync(b, TestEvent{})
+	assert.True(t, h1Executed, "first handler should have been executed")
+	assert.False(t, h2Executed, "second handler should not have been executed")
+}
+
 // EmitSync emits the given event on the brain and blocks until it has received
 // the context which indicates that the event was fully processed by all
 // matching handlers.

@@ -191,6 +191,35 @@ func TestBot_Respond_No_Matches(t *testing.T) {
 	}
 }
 
+func TestBot_Respond_MultipleMatchingHandlers(t *testing.T) {
+	b := joetest.NewBot(t)
+
+	var firstHandlerExecuted bool
+	b.Respond("hello", func(msg joe.Message) error {
+		firstHandlerExecuted = true
+		return nil
+	})
+
+	var secondHandlerExecuted bool
+	b.Respond(".*", func(msg joe.Message) error {
+		secondHandlerExecuted = true
+		return nil
+	})
+
+	b.Start()
+	defer b.Stop()
+
+	firstHandlerExecuted, secondHandlerExecuted = false, false // reset
+	b.EmitSync(joe.ReceiveMessageEvent{Text: "Hello"})
+	assert.True(t, firstHandlerExecuted, "first handler should have been executed")
+	assert.False(t, secondHandlerExecuted, "second handler should not have been executed")
+
+	firstHandlerExecuted, secondHandlerExecuted = false, false // reset
+	b.EmitSync(joe.ReceiveMessageEvent{Text: "trigger default"})
+	assert.False(t, firstHandlerExecuted, "first handler should not have been executed")
+	assert.True(t, secondHandlerExecuted, "second handler should have been executed")
+}
+
 func TestBot_RespondRegex(t *testing.T) {
 	b := joetest.NewBot(t)
 	handledMessages := make(chan joe.Message, 1)
