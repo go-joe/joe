@@ -35,8 +35,9 @@ type Brain struct {
 // An Event represents a concrete event type and optional callbacks that are
 // triggered when the event was processed by all registered handlers.
 type Event struct {
-	Data      interface{}
-	Callbacks []func(Event)
+	Data       interface{}
+	Callbacks  []func(Event)
+	AbortEarly bool
 }
 
 // The shutdownRequest type is used when signaling shutdown information between
@@ -271,21 +272,17 @@ func (b *Brain) consumeEvents() {
 	}()
 }
 
-type handlerState struct {
-	handlersDone bool
-}
-
 type ctxKey string
 
-const ctxKeyHandlerState ctxKey = "handlerState"
+const ctxKeyEvent ctxKey = "event"
 
-// CancelPendingHandlers is a function that should be called from within event
-// handler functions to indicate that the Brain should not executed any more
-// handlers after this handler has returned.
-func CancelPendingHandlers(ctx context.Context) {
-	state, _ := ctx.Value(ctxKeyHandlerState).(*handlerState)
-	if state != nil {
-		state.handlersDone = true
+// FinishEventContent can be called from within your event handler functions
+// to indicate that the Brain should not executed any other handlers after this
+// handler has returned.
+func FinishEventContent(ctx context.Context) {
+	evt, _ := ctx.Value(ctxKeyEvent).(*Event)
+	if evt != nil {
+		evt.AbortEarly = true
 	}
 }
 
@@ -302,8 +299,7 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 		zap.Int("handlers", len(handlers)),
 	)
 
-	var state handlerState
-	ctx = context.WithValue(ctx, ctxKeyHandlerState, &state)
+	ctx = context.WithValue(ctx, ctxKeyEvent, &evt)
 
 	for _, handler := range handlers {
 		err := b.executeEventHandler(ctx, handler, event)
@@ -314,10 +310,10 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 			)
 		}
 
-		if state.handlersDone {
+		if evt.AbortEarly {
 			// Abort handler execution early instead of running any more
-			// handlers. The state may have been changed by a handler, e.g.
-			// using the CancelPendingHandlers(…) function.
+			// handlers. The event state may have been changed by a handler, e.g.
+			// using the FinishEventContent(…) function.
 			break
 		}
 	}

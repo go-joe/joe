@@ -432,9 +432,9 @@ func TestBrain_RegisterMultiple(t *testing.T) {
 	assert.Equal(t, []string{"h1", "h2", "h3", "h4"}, execSequence)
 }
 
-// TestBrain_RegisterMultiple_AbortExecution tests that handlers can mark an
-// event as processed to avoid later handlers to be executed on the given event.
-func TestBrain_RegisterMultiple_AbortExecution(t *testing.T) {
+// TestFinishEventContent tests that handlers can mark an event as processed to
+// avoid later handlers to be executed on the given event.
+func TestFinishEventContent(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	b := NewBrain(logger)
 
@@ -443,7 +443,7 @@ func TestBrain_RegisterMultiple_AbortExecution(t *testing.T) {
 	var h1Executed bool
 	h1 := func(ctx context.Context, evt TestEvent) {
 		h1Executed = true
-		CancelPendingHandlers(ctx)
+		FinishEventContent(ctx)
 	}
 
 	var h2Executed bool

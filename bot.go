@@ -274,10 +274,10 @@ func (b *Bot) RespondRegex(expr string, fun func(Message) error) {
 			return nil
 		}
 
-		// If the event text matches our regular expression we can already
-		// cancel all other handlers that would otherwise be executed after this
-		// handler.
-		CancelPendingHandlers(ctx)
+		// If the event text matches our regular expression we can already mark
+		// the event context as done so the Brain does not run any other handlers
+		// that might match the received message.
+		FinishEventContent(ctx)
 
 		return fun(Message{
 			Context:  ctx,
