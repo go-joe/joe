@@ -231,8 +231,8 @@ func (b *Bot) Run() error {
 // use Brain.RegisterHandler(…) with a function that accepts ReceiveMessageEvent
 // instances.
 //
-// If multiple matching patterns are registered, all corresponding handler
-// functions are executed in the order in which they have been registered.
+// If multiple matching patterns are registered, only the first registered
+// handler is executed.
 func (b *Bot) Respond(msg string, fun func(Message) error) {
 	expr := "^" + msg + "$"
 	b.RespondRegex(expr, fun)
