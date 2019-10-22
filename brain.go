@@ -51,6 +51,23 @@ type shutdownRequest struct {
 // of a concrete event type.
 type eventHandler func(context.Context, reflect.Value) error
 
+// ctxKey is used to pass meta information to event handlers via the context.
+type ctxKey string
+
+// ctxKeyEvent is the context key under which we can lookup the internal *Event
+// instance in a handler.
+const ctxKeyEvent ctxKey = "event"
+
+// FinishEventContent can be called from within your event handler functions
+// to indicate that the Brain should not executed any other handlers after this
+// handler has returned.
+func FinishEventContent(ctx context.Context) {
+	evt, _ := ctx.Value(ctxKeyEvent).(*Event)
+	if evt != nil {
+		evt.AbortEarly = true
+	}
+}
+
 // NewBrain creates a new robot Brain. If the passed logger is nil it will
 // fallback to the zap.NewNop() logger.
 func NewBrain(logger *zap.Logger) *Brain {
@@ -270,20 +287,6 @@ func (b *Brain) consumeEvents() {
 			}
 		}
 	}()
-}
-
-type ctxKey string
-
-const ctxKeyEvent ctxKey = "event"
-
-// FinishEventContent can be called from within your event handler functions
-// to indicate that the Brain should not executed any other handlers after this
-// handler has returned.
-func FinishEventContent(ctx context.Context) {
-	evt, _ := ctx.Value(ctxKeyEvent).(*Event)
-	if evt != nil {
-		evt.AbortEarly = true
-	}
 }
 
 // handleEvent receives an event and dispatches it to all registered handlers
