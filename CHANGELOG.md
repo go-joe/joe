@@ -8,6 +8,9 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 Once we reach the v1.0 release, this project will adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+Nothing so far
+
+## [v0.9.0] - 2019-10-22
 - Add `Auth.Users()` and `Auth.UserPermissions(…)` functions to allow retrieving all users as well as users permissions.
 - Allow adapters to implement the optional `ReactionAwareAdapter` interface if they support emoji reactions
 - Add new `reactions` package which contains a compiled list of all officially supported reactions
@@ -15,10 +18,10 @@ Once we reach the v1.0 release, this project will adhere to [Semantic Versioning
 - Add new `reactions.Event` that may be emitted by an Adapter so users can listen for it 
 
 ## [v0.8.0] - 2019-04-21
-- Make Auth.Grant(…) idempotent and do not unnecessarily add smaller scopes
-- Support extending permissions via Auth.Grant(…)
-- Add boolean return value to Auth.Grant(…) to indicate if a new permission was granted
-- Add Auth.Revoke(…) to remove permissions
+- Make `Auth.Grant(…)` idempotent and do not unnecessarily add smaller scopes
+- Support extending permissions via `Auth.Grant(…)`
+- Add boolean return value to `Auth.Grant(…)` to indicate if a new permission was granted
+- Add `Auth.Revoke(…)` to remove permissions
 - Fix flaky unit test TestBrain_Memory
 - Fix flaky TestCLIAdapter_Register test
 - Add new `Storage` type which manages encoding/decoding, concurrent access and logging for a `Memory`
@@ -80,7 +83,8 @@ Once we reach the v1.0 release, this project will adhere to [Semantic Versioning
 Initial release, note that Joe is still in alpha and the API is not yet considered
 stable before the v1.0.0 release.
 
-[Unreleased]: https://github.com/go-joe/joe/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/go-joe/joe/compare/v0.9.0...HEAD
+[v0.9.0]: https://github.com/go-joe/joe/compare/v0.8.0...v0.9.0
 [v0.8.0]: https://github.com/go-joe/joe/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/go-joe/joe/compare/v0.6.0...v0.7.0
 [v0.6.0]: https://github.com/go-joe/joe/compare/v0.5.0...v0.6.0
