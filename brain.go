@@ -59,8 +59,8 @@ type ctxKey string
 const ctxKeyEvent ctxKey = "event"
 
 // FinishEventContent can be called from within your event handler functions
-// to indicate that the Brain should not executed any other handlers after this
-// handler has returned.
+// to indicate that the Brain should not execute any other handlers after the
+// calling handler has returned.
 func FinishEventContent(ctx context.Context) {
 	evt, _ := ctx.Value(ctxKeyEvent).(*Event)
 	if evt != nil {
@@ -122,7 +122,7 @@ func (b *Brain) isClosed() bool {
 //   // accept a context and/or return an error like other handlers.
 //   func(context.Context, interface{}) error
 //
-// The event, that will be dispatched to the passed handler function corresponds
+// The event, that will be dispatched to the passed handler function, corresponds
 // directly to the accepted function argument. For instance if you want to emit
 // and receive a custom event you can implement it like this:
 //

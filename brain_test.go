@@ -392,7 +392,7 @@ func TestBrain_ShutdownContext(t *testing.T) {
 }
 
 // TestBrain_RegisterMultiple registers multiple handlers for the same event and
-// checks they are executed in the order in which they have been registered
+// checks they are executed in the order in which they have been registered.
 func TestBrain_RegisterMultiple(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	b := NewBrain(logger)
@@ -420,14 +420,11 @@ func TestBrain_RegisterMultiple(t *testing.T) {
 	b.RegisterHandler(h2)
 	b.RegisterHandler(h3)
 	b.RegisterHandler(h4)
-
 	require.Empty(t, b.registrationErrs, "unexpected registration errors")
 
-	// Start the brains event handler loop.
 	go b.HandleEvents()
 	defer b.Shutdown(ctx)
 
-	// Emit our test event.
 	EmitSync(b, TestEvent{})
 	assert.Equal(t, []string{"h1", "h2", "h3", "h4"}, execSequence)
 }
