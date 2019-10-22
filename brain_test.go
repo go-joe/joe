@@ -391,6 +391,47 @@ func TestBrain_ShutdownContext(t *testing.T) {
 	<-callback
 }
 
+// TestBrain_RegisterMultiple registers multiple handlers for the same event and
+// checks they are executed in the order in which they have been registered
+func TestBrain_RegisterMultiple(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	b := NewBrain(logger)
+
+	type TestEvent struct{}
+
+	var execSequence []string // tracks order of handler execution
+
+	h1 := func(TestEvent) {
+		execSequence = append(execSequence, "h1")
+	}
+	h2 := func(TestEvent) error {
+		execSequence = append(execSequence, "h2")
+		return nil
+	}
+	h3 := func(context.Context, TestEvent) {
+		execSequence = append(execSequence, "h3")
+	}
+	h4 := func(context.Context, TestEvent) error {
+		execSequence = append(execSequence, "h4")
+		return nil
+	}
+
+	b.RegisterHandler(h1)
+	b.RegisterHandler(h2)
+	b.RegisterHandler(h3)
+	b.RegisterHandler(h4)
+
+	require.Empty(t, b.registrationErrs, "unexpected registration errors")
+
+	// Start the brains event handler loop.
+	go b.HandleEvents()
+	defer b.Shutdown(ctx)
+
+	// Emit our test event.
+	EmitSync(b, TestEvent{})
+	assert.Equal(t, []string{"h1", "h2", "h3", "h4"}, execSequence)
+}
+
 // EmitSync emits the given event on the brain and blocks until it has received
 // the context which indicates that the event was fully processed by all
 // matching handlers.

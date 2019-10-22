@@ -227,7 +227,12 @@ func (b *Bot) Run() error {
 //
 // If you need complete control over the regular expression, e.g. because you
 // want the patter to match only a substring of the message but not all of it,
-// you can use Bot.RespondRegex(…).
+// you can use Bot.RespondRegex(…). For even more control you can also directly
+// use Brain.RegisterHandler(…) with a function that accepts ReceiveMessageEvent
+// instances.
+//
+// If multiple matching patterns are registered, all corresponding handler
+// functions are executed in the order in which they have been registered.
 func (b *Bot) Respond(msg string, fun func(Message) error) {
 	expr := "^" + msg + "$"
 	b.RespondRegex(expr, fun)

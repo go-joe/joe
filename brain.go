@@ -93,7 +93,7 @@ func (b *Brain) isClosed() bool {
 //   func(context.Context, MyCustomEventStruct)
 //
 //   // You can optionally return a single error value. Returning any other type
-//   // or returning more than one value will lead to an error. If the handler
+//   // or returning more than one value is not possible. If the handler
 //   // returns an error it will be logged.
 //   func(MyCustomEventStruct) error
 //
@@ -104,7 +104,7 @@ func (b *Brain) isClosed() bool {
 //   // accept a context and/or return an error like other handlers.
 //   func(context.Context, interface{}) error
 //
-// The event that will be dispatched to the passed handler function corresponds
+// The event, that will be dispatched to the passed handler function corresponds
 // directly to the accepted function argument. For instance if you want to emit
 // and receive a custom event you can implement it like this:
 //
@@ -114,6 +114,9 @@ func (b *Brain) isClosed() bool {
 //     b.RegisterHandler(func(evt CustomEvent) {
 //         …
 //     })
+//
+// If multiple handlers are registered for the same event type, then they are
+// all executed in the order in which they have been registered.
 func (b *Brain) RegisterHandler(fun interface{}) {
 	err := b.registerHandler(fun)
 	if err != nil {
