@@ -11,6 +11,7 @@ type ShutdownEvent struct{}
 // The ReceiveMessageEvent is typically emitted by an Adapter when the Bot sees
 // a new message from the chat.
 type ReceiveMessageEvent struct {
+	ID       string // The ID of the message, identifying it at least uniquely within the Channel
 	Text     string // The message text.
 	AuthorID string // A string identifying the author of the message on the adapter.
 	Channel  string // The channel over which the message was received.

@@ -8,3 +8,9 @@ type Error string
 func (err Error) Error() string {
 	return string(err)
 }
+
+// ErrNotImplemented is returned if the user tries to use a feature that is not
+// implemented on the corresponding components (e.g. the Adapter). For instance,
+// not all Adapter implementations may support emoji reactions and trying to
+// attach a reaction to a message might return this error.
+const ErrNotImplemented = Error("not implemented")

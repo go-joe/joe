@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-joe/joe"
 	"github.com/go-joe/joe/joetest"
+	"github.com/go-joe/joe/reactions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
@@ -53,6 +54,13 @@ func TestCLIAdapter_Send(t *testing.T) {
 	err := a.Send("Hello World", "")
 	require.NoError(t, err)
 	assert.Equal(t, "Hello World\n", output.String())
+}
+
+func TestCLIAdapter_React(t *testing.T) {
+	a, output := cliTestAdapter(t)
+	err := a.React(reactions.Thumbsup, joe.Message{})
+	require.NoError(t, err)
+	assert.Equal(t, "👍\n", output.String())
 }
 
 func TestCLIAdapter_Send_Author(t *testing.T) {

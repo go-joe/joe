@@ -3,6 +3,8 @@ package joe
 import (
 	"context"
 	"fmt"
+
+	"github.com/go-joe/joe/reactions"
 )
 
 // A Message is automatically created from a ReceiveMessageEvent and then passed
@@ -10,6 +12,7 @@ import (
 // when the message matches the regular expression of the handler.
 type Message struct {
 	Context  context.Context
+	ID       string // The ID of the message, identifying it at least uniquely within the Channel
 	Text     string
 	AuthorID string
 	Channel  string
@@ -35,4 +38,16 @@ func (msg *Message) RespondE(text string, args ...interface{}) error {
 	}
 
 	return msg.adapter.Send(text, msg.Channel)
+}
+
+// React attempts to let the Adapter attach the given reaction to this message.
+// If the adapter does not support this feature this function will return
+// ErrNotImplemented.
+func (msg *Message) React(reaction reactions.Reaction) error {
+	adapter, ok := msg.adapter.(ReactionAwareAdapter)
+	if !ok {
+		return ErrNotImplemented
+	}
+
+	return adapter.React(reaction, *msg)
 }

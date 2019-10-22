@@ -9,6 +9,10 @@ Once we reach the v1.0 release, this project will adhere to [Semantic Versioning
 
 ## [Unreleased]
 - Add `Auth.Users()` and `Auth.UserPermissions(…)` functions to allow retrieving all users as well as users permissions.
+- Allow adapters to implement the optional `ReactionAwareAdapter` interface if they support emoji reactions
+- Add new `reactions` package which contains a compiled list of all officially supported reactions
+- Components may now return the new `ErrNotImplemented` if they do not support a feature
+- Add new `reactions.Event` that may be emitted by an Adapter so users can listen for it 
 
 ## [v0.8.0] - 2019-04-21
 - Make Auth.Grant(…) idempotent and do not unnecessarily add smaller scopes

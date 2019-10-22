@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/go-joe/joe/reactions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -29,6 +30,27 @@ func TestMessage_RespondE(t *testing.T) {
 	a.AssertExpectations(t)
 }
 
+func TestMessage_React_NotImplemented(t *testing.T) {
+	a := new(MockAdapter)
+	msg := Message{adapter: a}
+
+	err := msg.React(reactions.Thumbsup)
+	assert.Equal(t, ErrNotImplemented, err)
+	a.AssertExpectations(t)
+}
+
+func TestMessage_React(t *testing.T) {
+	a := new(ExtendedMockAdapter)
+	msg := Message{adapter: a}
+
+	err := errors.New("this clearly failed")
+	a.On("React", reactions.Thumbsup, msg).Return(err)
+	actual := msg.React(reactions.Thumbsup)
+
+	assert.Equal(t, err, actual)
+	a.AssertExpectations(t)
+}
+
 type MockAdapter struct {
 	mock.Mock
 }
@@ -44,5 +66,14 @@ func (a *MockAdapter) Send(text, channel string) error {
 
 func (a *MockAdapter) Close() error {
 	args := a.Called()
+	return args.Error(0)
+}
+
+type ExtendedMockAdapter struct {
+	MockAdapter
+}
+
+func (a *ExtendedMockAdapter) React(r reactions.Reaction, msg Message) error {
+	args := a.Called(r, msg)
 	return args.Error(0)
 }
