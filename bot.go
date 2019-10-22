@@ -274,6 +274,11 @@ func (b *Bot) RespondRegex(expr string, fun func(Message) error) {
 			return nil
 		}
 
+		// If the event text matches our regular expression we can already
+		// cancel all other handlers that would otherwise be executed after this
+		// handler.
+		CancelPendingHandlers(ctx)
+
 		return fun(Message{
 			Context:  ctx,
 			ID:       evt.ID,

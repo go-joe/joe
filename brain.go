@@ -271,6 +271,24 @@ func (b *Brain) consumeEvents() {
 	}()
 }
 
+type handlerState struct {
+	handlersDone bool
+}
+
+type ctxKey string
+
+const ctxKeyHandlerState ctxKey = "handlerState"
+
+// CancelPendingHandlers is a function that should be called from within event
+// handler functions to indicate that the Brain should not executed any more
+// handlers after this handler has returned.
+func CancelPendingHandlers(ctx context.Context) {
+	state, _ := ctx.Value(ctxKeyHandlerState).(*handlerState)
+	if state != nil {
+		state.handlersDone = true
+	}
+}
+
 // handleEvent receives an event and dispatches it to all registered handlers
 // using the reflect API. When all applicable handlers are called (maybe none)
 // the function runs all event callbacks.
@@ -284,6 +302,9 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 		zap.Int("handlers", len(handlers)),
 	)
 
+	var state handlerState
+	ctx = context.WithValue(ctx, ctxKeyHandlerState, &state)
+
 	for _, handler := range handlers {
 		err := b.executeEventHandler(ctx, handler, event)
 		if err != nil {
@@ -291,6 +312,13 @@ func (b *Brain) handleEvent(ctx context.Context, evt Event) {
 				// TODO: somehow log the name of the handler
 				zap.Error(err),
 			)
+		}
+
+		if state.handlersDone {
+			// Abort handler execution early instead of running any more
+			// handlers. The state may have been changed by a handler, e.g.
+			// using the CancelPendingHandlers(…) function.
+			break
 		}
 	}
 
