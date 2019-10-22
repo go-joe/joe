@@ -247,6 +247,65 @@ func TestAuth_Revoke_Errors(t *testing.T) {
 	assert.EqualError(t, err, "failed to delete last user permission: not today")
 }
 
+func TestAuth_Users(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	store := joetest.NewStorage(t)
+	auth := joe.NewAuth(logger, store.Storage)
+
+	userPermissions := map[string][]string{
+		"dave": {"bot.scopeA", "bot.scopeB"},
+		"john": {"bot.scopeC", "bot.scopeD"},
+	}
+
+	for user, perms := range userPermissions {
+		for _, scope := range perms {
+			_, err := auth.Grant(scope, user)
+			require.NoError(t, err)
+		}
+	}
+
+	// Set a non-permission keys to check they are not treated as permission scopes.
+	store.MustSet("non.permission.key", "not-a-user")
+	store.MustSet("almost.joe.permissions.foo", "nice try")
+
+	// Users() should return our list of user IDs (i.e. "dave" and "john")
+	users, err := auth.Users()
+	require.NoError(t, err)
+
+	assert.Len(t, users, len(userPermissions))
+	for user := range userPermissions {
+		assert.Contains(t, users, user)
+	}
+}
+
+func TestAuth_UserPermissions(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	store := joetest.NewStorage(t)
+	auth := joe.NewAuth(logger, store.Storage)
+
+	userPermissions := map[string][]string{
+		"dave": {"bot.scopeA", "bot.scopeB"},
+		"john": {"bot.scopeC", "bot.scopeD"},
+	}
+
+	for user, perms := range userPermissions {
+		for _, scope := range perms {
+			_, err := auth.Grant(scope, user)
+			require.NoError(t, err)
+		}
+	}
+
+	// UserPermissions() should return all permission scopes for a user
+	for user := range userPermissions {
+		permissions, err := auth.UserPermissions(user)
+		require.NoError(t, err)
+
+		for _, scope := range permissions {
+			assert.NoError(t, auth.CheckPermission(scope, user))
+		}
+	}
+}
+
 type memoryMock struct {
 	mock.Mock
 }

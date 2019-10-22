@@ -311,16 +311,24 @@ writing too much code yourself.
 If you have written a module and want to share it, please add it to this list and
 open a pull request.
 
+### Chat Adapters
+
 - Slack Adapter: https://github.com/go-joe/slack-adapter
-- Redis Memory: https://github.com/go-joe/redis-memory
-- File Memory: https://github.com/go-joe/file-memory
-- HTTP Server: https://github.com/go-joe/http-server
-- Cron Jobs: https://github.com/go-joe/cron
 - Rocket.Chat Adapter: https://github.com/dwmunster/rocket-adapter
 - Telegram Adapter: https://github.com/robertgzr/joe-telegram-adapter
+- IRC Adapter: https://github.com/akrennmair/joe-irc-adapter
+
+### Memory Modules
+
+- Redis Memory: https://github.com/go-joe/redis-memory
+- File Memory: https://github.com/go-joe/file-memory
 - Bolt Memory: https://github.com/robertgzr/joe-bolt-memory
 - Sqlite Memory: https://github.com/warmans/sqlite-memory
-- IRC Adapter: https://github.com/akrennmair/joe-irc-adapter
+
+### Other Modules
+
+- HTTP Server: https://github.com/go-joe/http-server
+- Cron Jobs: https://github.com/go-joe/cron
 
 ## Built With
 
@@ -360,5 +368,5 @@ This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICE
 [go-modules]: https://github.com/golang/go/wiki/Modules
 [joe-http]: https://github.com/go-joe/http-server
 [tags]: https://github.com/go-joe/joe/tags
-[contributors]: https://github.com/github.com/go-joe/joe/contributors
+[contributors]: https://github.com/go-joe/joe/contributors
 [embedmd]: https://github.com/campoy/embedmd

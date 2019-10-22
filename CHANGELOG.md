@@ -8,6 +8,7 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 Once we reach the v1.0 release, this project will adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Add `Auth.Users()` and `Auth.UserPermissions(…)` functions to allow retrieving all users as well as users permissions.
 - Allow adapters to implement the optional `ReactionAwareAdapter` interface if they support emoji reactions
 - Add new `reactions` package which contains a compiled list of all officially supported reactions
 - Components may now return the new `ErrNotImplemented` if they do not support a feature

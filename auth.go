@@ -10,6 +10,9 @@ import (
 // ErrNotAllowed is returned if the user is not allowed access to a specific scope.
 const ErrNotAllowed = Error("not allowed")
 
+// permissionKeyPrefix is the key prefix in the Storage that all permission keys have.
+const permissionKeyPrefix = "joe.permissions."
+
 // Auth implements logic to add user authorization checks to your bot.
 type Auth struct {
 	logger *zap.Logger
@@ -60,6 +63,41 @@ func (a *Auth) CheckPermission(scope, userID string) error {
 	}
 
 	return ErrNotAllowed
+}
+
+// Users returns a list of user IDs having one or more permission scopes.
+func (a *Auth) Users() ([]string, error) {
+	a.logger.Debug("Retrieving all user IDs from storage")
+
+	keys, err := a.store.Keys()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load permissions")
+	}
+
+	var userIDs []string
+	for _, key := range keys {
+		if strings.HasPrefix(key, permissionKeyPrefix) {
+			userID := strings.TrimPrefix(key, permissionKeyPrefix)
+			userIDs = append(userIDs, userID)
+		}
+	}
+
+	return userIDs, nil
+}
+
+// UserPermissions returns all permission scopes for a specific user.
+func (a *Auth) UserPermissions(userID string) ([]string, error) {
+	a.logger.Debug("Retrieving user permissions from storage",
+		zap.String("user_id", userID),
+	)
+
+	key := a.permissionsKey(userID)
+	permissions, err := a.loadPermissions(key)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return permissions, nil
 }
 
 func (a *Auth) loadPermissions(key string) ([]string, error) {
@@ -188,5 +226,5 @@ func (a *Auth) updatePermissions(key string, permissions []string) error {
 }
 
 func (a *Auth) permissionsKey(userID string) string {
-	return "joe.permissions." + userID
+	return permissionKeyPrefix + userID
 }
