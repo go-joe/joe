@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-joe/joe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -63,6 +64,26 @@ func TestBot_RegistrationErrors(t *testing.T) {
 	case err := <-b.runErr:
 		require.Error(t, err)
 		assert.True(t, strings.HasPrefix(err.Error(), "invalid event handlers: "))
+		t.Log(err.Error())
+	case <-time.After(b.Timeout):
+		b.T.Errorf("Timeout")
+	}
+}
+
+func TestBot_RegistrationErrors2(t *testing.T) {
+	b := NewBot(t)
+
+	b.RespondRegex("invalid regex: (", func(joe.Message) error {
+		return joe.ErrNotImplemented
+	})
+
+	b.Start()
+
+	select {
+	case err := <-b.runErr:
+		require.Error(t, err)
+		assert.True(t, strings.HasPrefix(err.Error(), "invalid event handlers: "))
+		t.Log(err.Error())
 	case <-time.After(b.Timeout):
 		b.T.Errorf("Timeout")
 	}
