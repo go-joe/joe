@@ -103,17 +103,18 @@ func (b *Brain) isClosed() bool {
 //
 // Allowed function signatures:
 //
-//   // MyCustomEventStruct must be any struct but not a pointer to a struct.
-//   func(MyCustomEventStruct)
+//   // AnyType can be any scalar, struct or interface type as long as it is not
+//   // a pointer.
+//   func(AnyType)
 //
 //   // You can optionally accept a context as the first argument. The context
 //   // is used to signal handler timeouts or when the bot is shutting down.
-//   func(context.Context, MyCustomEventStruct)
+//   func(context.Context, AnyType)
 //
 //   // You can optionally return a single error value. Returning any other type
 //   // or returning more than one value is not possible. If the handler
 //   // returns an error it will be logged.
-//   func(MyCustomEventStruct) error
+//   func(AnyType) error
 //
 //   // Event handlers can also accept an interface in which case they will be
 //   // be called for all events which implement the interface. Consequently,
@@ -430,14 +431,8 @@ func checkHandlerParams(handlerFunc reflect.Type) (evtType reflect.Type, withCon
 		}
 	}
 
-	switch evtType.Kind() {
-	case reflect.Struct, reflect.Interface:
-		// ok cool, move on
-	case reflect.Ptr:
-		err = errors.New("event handler argument must be a struct and not a pointer")
-		return
-	default:
-		err = errors.New("event handler argument must be a struct")
+	if evtType.Kind() == reflect.Ptr {
+		err = errors.New("event handler argument cannot be a pointer")
 		return
 	}
 

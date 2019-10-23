@@ -33,7 +33,7 @@ func TestBrain_RegisterHandler(t *testing.T) {
 		},
 		"err_pointer": {
 			fun: func(evt *TestEvent) {},
-			err: "event handler argument must be a struct and not a pointer",
+			err: "event handler argument cannot be a pointer",
 		},
 		"err_too_many_args": {
 			fun: func(evt1, evt2, evt3, evt4 TestEvent) {},
@@ -42,10 +42,6 @@ func TestBrain_RegisterHandler(t *testing.T) {
 		"err_too_many_events": {
 			fun: func(evt1, evt2 TestEvent) {},
 			err: "event handler has two arguments but the first is not a context.Context",
-		},
-		"err_wrong_arg": {
-			fun: func(n int) {},
-			err: "event handler argument must be a struct",
 		},
 		"err_context": {
 			fun: func(TestEvent, context.Context) {},
@@ -221,6 +217,28 @@ func TestBrain_Emit_ImmutableEvent(t *testing.T) {
 	EmitSync(b, event)
 
 	assert.Equal(t, "foo", event.String)
+}
+
+func TestBrain_Emit_Scalar(t *testing.T) {
+	type TestEvent int
+
+	logger := zaptest.NewLogger(t)
+	b := NewBrain(logger)
+
+	var handlerExecuted bool
+	b.RegisterHandler(func(evt TestEvent) {
+		handlerExecuted = true
+		assert.Equal(t, TestEvent(42), evt)
+	})
+	require.Empty(t, b.registrationErrs)
+
+	go b.HandleEvents()
+	defer b.Shutdown(ctx)
+
+	event := TestEvent(42)
+	EmitSync(b, event)
+
+	assert.True(t, handlerExecuted)
 }
 
 func TestBrain_HandlerPanics(t *testing.T) {

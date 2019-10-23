@@ -8,6 +8,7 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 Once we reach the v1.0 release, this project will adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Allow event handlers to also use scalar event types (fixes #14)
 - Add new `FinishEventContent(…)` function to finish event processing with multiple handlers early
 - **Breaking change:** Message handlers registered via `Bot.Respond(…)` and `Bot.RespondRegex(…)` now abort early if the pattern matches
   - This allows users to specify a default response when nothing else matches (see #25)
