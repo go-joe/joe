@@ -101,7 +101,10 @@ func (b *Bot) Start() {
 
 	go func() {
 		// The error will be available by calling Bot.Stop()
-		_ = b.Run()
+		err := b.Run()
+		if err != nil {
+			close(started)
+		}
 	}()
 
 	<-started

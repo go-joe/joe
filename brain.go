@@ -135,6 +135,11 @@ func (b *Brain) isClosed() bool {
 //
 // If multiple handlers are registered for the same event type, then they are
 // all executed in the order in which they have been registered.
+//
+// You should register all handlers before you start the bot via Bot.Run(…).
+// While registering handlers later is also possible, any registration errors
+// will silently be ignored if you register an invalid handler when the bot is
+// already running.
 func (b *Brain) RegisterHandler(fun interface{}) {
 	err := b.registerHandler(fun)
 	if err != nil {

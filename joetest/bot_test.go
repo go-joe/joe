@@ -2,6 +2,7 @@ package joetest
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -46,4 +47,23 @@ func TestBotEmitSyncTimeout(t *testing.T) {
 	assert.True(t, mock.fatal)
 	assert.Equal(t, "EmitSync timed out", mock.Errors[0])
 	assert.Equal(t, "Stop timed out", mock.Errors[1])
+}
+
+func TestBot_RegistrationErrors(t *testing.T) {
+	b := NewBot(t)
+
+	b.Brain.RegisterHandler(func(evt *TestEvent) {
+		// handlers cannot use pointers for the event type so registering this
+		// handler function should create a registration error.
+	})
+
+	b.Start()
+
+	select {
+	case err := <-b.runErr:
+		require.Error(t, err)
+		assert.True(t, strings.HasPrefix(err.Error(), "invalid event handlers: "))
+	case <-time.After(b.Timeout):
+		b.T.Errorf("Timeout")
+	}
 }
