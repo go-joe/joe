@@ -9,8 +9,8 @@ Once we reach the v1.0 release, this project will adhere to [Semantic Versioning
 
 ## [Unreleased]
 - Add new `FinishEventContent(…)` function to finish event processing with multiple handlers early
-- Message handlers registered via `Bot.Respond(…)` now abort early if the pattern matches
-- This allows users to specify a default response when nothing else matches (see #25)
+- **Breaking change:** Message handlers registered via `Bot.Respond(…)` and `Bot.RespondRegex(…)` now abort early if the pattern matches
+  - This allows users to specify a default response when nothing else matches (see #25)
 
 ## [v0.9.0] - 2019-10-22
 - Add `Auth.Users()` and `Auth.UserPermissions(…)` functions to allow retrieving all users as well as users permissions.
