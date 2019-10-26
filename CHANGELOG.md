@@ -8,6 +8,9 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 Once we reach the v1.0 release, this project will adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+Nothing so far
+
+## [v0.10.0] - 2019-10-26
 - Allow event handlers to also use scalar event types (fixes #14)
 - Add new `FinishEventContent(…)` function to finish event processing with multiple handlers early
 - **Breaking change:** Message handlers registered via `Bot.Respond(…)` and `Bot.RespondRegex(…)` now abort early if the pattern matches
@@ -86,7 +89,8 @@ Once we reach the v1.0 release, this project will adhere to [Semantic Versioning
 Initial release, note that Joe is still in alpha and the API is not yet considered
 stable before the v1.0.0 release.
 
-[Unreleased]: https://github.com/go-joe/joe/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/go-joe/joe/compare/v0.10.0...HEAD
+[v0.9.0]: https://github.com/go-joe/joe/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/go-joe/joe/compare/v0.8.0...v0.9.0
 [v0.8.0]: https://github.com/go-joe/joe/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/go-joe/joe/compare/v0.6.0...v0.7.0
