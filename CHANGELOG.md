@@ -90,7 +90,7 @@ Initial release, note that Joe is still in alpha and the API is not yet consider
 stable before the v1.0.0 release.
 
 [Unreleased]: https://github.com/go-joe/joe/compare/v0.10.0...HEAD
-[v0.9.0]: https://github.com/go-joe/joe/compare/v0.9.0...v0.10.0
+[v0.10.0]: https://github.com/go-joe/joe/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/go-joe/joe/compare/v0.8.0...v0.9.0
 [v0.8.0]: https://github.com/go-joe/joe/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/go-joe/joe/compare/v0.6.0...v0.7.0
