@@ -3,7 +3,6 @@ package joe
 import (
 	"bytes"
 	"encoding/gob"
-	"go.uber.org/zap"
 	"sort"
 	"strings"
 	"testing"
@@ -11,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
 
@@ -179,7 +179,6 @@ func TestStorage_PrefixAware(t *testing.T) {
 	}
 	actualKeys, err := store.KeysWithPrefix("test.")
 	require.NoError(t, err)
-
 	assert.Equal(t, expectedKeys, actualKeys)
 	assert.True(t, store.memory.(*prefixAwareMemory).prefixUsed)
 }
