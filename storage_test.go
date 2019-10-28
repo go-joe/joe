@@ -3,6 +3,9 @@ package joe
 import (
 	"bytes"
 	"encoding/gob"
+	"go.uber.org/zap"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -120,4 +123,63 @@ func (e gobEncoder) Decode(data []byte, target interface{}) error {
 
 	enc := gob.NewDecoder(bytes.NewBuffer(data))
 	return enc.Decode(target)
+}
+
+type prefixAwareMemory struct {
+	*inMemory
+	prefixUsed bool
+}
+
+func (m *prefixAwareMemory) KeysWithPrefix(prefix string) ([]string, error) {
+	m.prefixUsed = true
+	keys, err := m.Keys()
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, k := range keys {
+		if strings.HasPrefix(k, prefix) {
+			results = append(results, k)
+		}
+	}
+	sort.Strings(results)
+	return results, nil
+}
+
+func newPrefixAwareStorage(logger *zap.Logger) *Storage {
+	return &Storage{
+		logger:  logger,
+		memory:  &prefixAwareMemory{newInMemory(), false},
+		encoder: new(jsonEncoder),
+	}
+}
+
+var _ PrefixAwareMemory = &prefixAwareMemory{nil, false}
+
+func TestStorage_PrefixAware(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	store := newPrefixAwareStorage(logger)
+
+	testEntries := []string{
+		"test.k3",
+		"test.k1",
+		"non-matching",
+		"test.k2",
+	}
+
+	for _, k := range testEntries {
+		err := store.Set(k, nil)
+		require.NoError(t, err)
+	}
+
+	expectedKeys := []string{
+		"test.k1",
+		"test.k2",
+		"test.k3",
+	}
+	actualKeys, err := store.KeysWithPrefix("test.")
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedKeys, actualKeys)
+	assert.True(t, store.memory.(*prefixAwareMemory).prefixUsed)
 }

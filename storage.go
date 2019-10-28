@@ -3,6 +3,7 @@ package joe
 import (
 	"encoding/json"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -32,6 +33,14 @@ type Memory interface {
 	Delete(key string) (bool, error)
 	Keys() ([]string, error)
 	Close() error
+}
+
+// PrefixAwareMemory is an optional interface for Memory to implement if the
+// backing storage has a higher performance way to search keys matching a given
+// prefix. If the Memory does not implement this interface, we will iterate
+// over the keys given by Keys().
+type PrefixAwareMemory interface {
+	KeysWithPrefix(prefix string) ([]string, error)
 }
 
 // A MemoryEncoder is used to encode and decode any values that are stored in
@@ -81,6 +90,31 @@ func (s *Storage) Keys() ([]string, error) {
 
 	sort.Strings(keys)
 	return keys, err
+}
+
+// KeysWithPrefix returns all keys matching a given prefix.
+func (s *Storage) KeysWithPrefix(prefix string) ([]string, error) {
+	if m, ok := s.memory.(PrefixAwareMemory); ok {
+		s.mu.RLock()
+		keys, err := m.KeysWithPrefix(prefix)
+		s.mu.RUnlock()
+
+		sort.Strings(keys)
+		return keys, err
+	}
+
+	keys, err := s.memory.Keys()
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, k := range keys {
+		if strings.HasPrefix(k, prefix) {
+			results = append(results, k)
+		}
+	}
+	sort.Strings(results)
+	return results, nil
 }
 
 // Set encodes the given data and stores it in the Memory that is managed by the
