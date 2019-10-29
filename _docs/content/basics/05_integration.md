@@ -20,7 +20,7 @@ this is such a dominant use-case we already provide the
 [`github.com/go-joe/http-server`][joe-http] module to make it easy for everybody
 to write their own custom integrations.
 
-[embedmd]:# (_examples/05_http/main.go)
+[embedmd]:# (../../../_examples/05_http/main.go)
 ```go
 package main
 

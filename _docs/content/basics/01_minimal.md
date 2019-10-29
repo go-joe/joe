@@ -10,7 +10,7 @@ a _Handler_ function if it sees a message directed to the bot that matches a giv
 
 For example a bot that responds to a message "ping" with the answer "PONG" looks like this:
 
-[embedmd]:# (_examples/01_minimal/main.go)
+[embedmd]:# (../../../_examples/01_minimal/main.go)
 ```go
 package main
 

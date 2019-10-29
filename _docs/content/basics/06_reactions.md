@@ -18,7 +18,7 @@ Currently the following chat adapters support reactions:
 
 The following example shows how you can use reactions in your message handlers:
 
-[embedmd]:# (_examples/06_react/main.go)
+[embedmd]:# (../../../_examples/06_react/main.go)
 ```go
 package main
 

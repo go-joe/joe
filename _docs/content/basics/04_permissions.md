@@ -29,7 +29,7 @@ could also allow even more general access to everything in the api via the
 
 Scopes can be granted statically in code or dynamically in a handler like this:
 
-[embedmd]:# (_examples/04_auth/main.go)
+[embedmd]:# (../../../_examples/04_auth/main.go)
 ```go
 package main
 

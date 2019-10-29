@@ -21,7 +21,7 @@ workspace and store key-value data in Redis. To allow the message handlers to
 access the memory we define them as functions on a custom `ExampleBot`type which
 embeds the `joe.Bot`.
 
-[embedmd]:# (_examples/02_useful/main.go)
+[embedmd]:# (../../../_examples/02_useful/main.go)
 ```go
 package main
 

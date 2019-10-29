@@ -22,7 +22,7 @@ Implementing custom events is easy because you can emit any type as event and
 register handlers that match only this type. What this exactly means is best
 demonstrated with another example:
 
-[embedmd]:# (_examples/03_custom_events/main.go)
+[embedmd]:# (../../../_examples/03_custom_events/main.go)
 ```go
 package main
 
