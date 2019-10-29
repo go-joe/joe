@@ -20,12 +20,13 @@ address to Redis. Note that all fields are optional since the bot can fallback
 to defaults (CLI instead of slack, im-memory instead of Redis) or disable a
 feature all together (e.g. no HTTP server).
 
+[embedmd]:# (../../../_examples/07_config/config.go /\/\/ Config holds all/ /return modules\n\}/)
 ```go
 // Config holds all parameters to setup a new chat bot.
 type Config struct {
-	SlackToken  string // slack token, if empty we fallback to the CLI
-	HTTPListen  string // optional HTTP listen address to receive callbacks
-	RedisAddr   string // optional address to store keys in Redis
+	SlackToken string // slack token, if empty we fallback to the CLI
+	HTTPListen string // optional HTTP listen address to receive callbacks
+	RedisAddr  string // optional address to store keys in Redis
 }
 
 // Modules creates a list of joe.Modules that can be used with this configuration.
@@ -46,16 +47,17 @@ func (conf Config) Modules() []joe.Module {
 
 	return modules
 }
-``` 
+```
 
 We also want to define our own Bot type on which we can define our handlers. To
 create a new instance we will also provide a `New(…)` function which accepts the
 previously defined configuration type.
 
+[embedmd]:# (../../../_examples/07_config/bot.go /type Bot/ /return b\n\}/)
 ```go
 type Bot struct {
-	*joe.Bot // Anonymously embed the joe.Bot type so we can use its functions easily.
-	…        // You may want to keep other fields (e.g. the config) here as well.
+	*joe.Bot        // Anonymously embed the joe.Bot type so we can use its functions easily.
+	conf     Config // You can keep other fields here as well.
 }
 
 func New(conf Config) *Bot {
@@ -63,7 +65,7 @@ func New(conf Config) *Bot {
 		Bot: joe.New("joe", conf.Modules()...),
 	}
 
-	// Define any custom event and message handlers here	
+	// Define any custom event and message handlers here
 	b.Brain.RegisterHandler(b.GitHubCallback)
 	b.Respond("do stuff", b.DoStuffCommand)
 
@@ -77,6 +79,7 @@ the existence of some configuration parameters or you generally want to validate
 the passed parameters you can do this via a new `Config.Validate()` function that
 is called before creating a new Bot:
 
+[embedmd]:# (../../../_examples/07_config/config.go /func \(conf Config\) Validate/ $)
 ```go
 func (conf Config) Validate() error {
 	if conf.HTTPListen == "" {
@@ -86,17 +89,18 @@ func (conf Config) Validate() error {
 }
 ```
 
+[embedmd]:# (../../../_examples/07_config/bot.go /func New2/ /return b, nil\n\}/)
 ```go
-func New(conf Config) (*Bot, error) {
+func New2(conf Config) (*Bot, error) {
 	if err := conf.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid configuration")
 	}
-	
+
 	b := &Bot{
 		Bot: joe.New("joe", conf.Modules()...),
 	}
 
-	// Define any custom event and message handlers here	
+	// Define any custom event and message handlers here
 	b.Brain.RegisterHandler(b.GitHubCallback)
 	b.Respond("do stuff", b.DoStuffCommand)
 

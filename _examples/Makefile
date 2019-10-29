@@ -13,7 +13,7 @@ check: $(EXAMPLES)
 
 # We are building the files simply to detect any compile time issues.
 */main.go:
-	@gofmt -d "$@"
-	@test -z "$$(gofmt -l "$@")" || (echo "ERROR: bad source code formatting in $@" && false)
+	@gofmt -d "$(@D)"
+	@test -z "$$(gofmt -l "$(@D)")" || (echo "ERROR: bad source code formatting in $(@D)" && false)
 	cd "$(dir $@)" && go build -o /dev/null -v
 	cd "$(dir $@)" && go mod tidy

@@ -1,5 +1,0 @@
-- makefile
-    - deploy
-    - embedmd for examples
-- inspiration / use cases
-    - give people ideas what they could build
