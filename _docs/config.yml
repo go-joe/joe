@@ -1,0 +1,46 @@
+baseURL: "https://joe-bot.net/"
+languageCode: "en-us"
+title: "Joe Bot"
+theme: "learn"
+
+params:
+  themeVariant: "custom" # see static/css/theme-custom.css
+  author: Friedrich Große
+  description: A general-purpose bot library
+
+enableEmoji: true
+
+# Code highlighting configuration
+# See https://gohugo.io/content-management/syntax-highlighting/
+pygmentsCodeFences: true
+pygmentsStyle: monokai
+pygmentsCodefencesGuessSyntax: true
+PygmentsUseClasses: true
+
+# Activate search index
+outputs:
+  home: [HTML, RSS, JSON]
+
+# Add additional links in the navigation menu
+menu:
+  shortcuts:
+    - name: <i class='fab fa-github fa-fw'></i> GitHub Repo
+      url: 'https://github.com/go-joe/joe'
+      weight: 10
+    - name: <i class='fas fa-book fa-fw'></i> GoDoc
+      url: 'https://godoc.org/github.com/go-joe/joe'
+      weight: 20
+
+privacy:
+  disqus:
+    disable: true
+  googleAnalytics:
+    disable: true
+  instagram:
+    disable: true
+  twitter:
+    disable: true
+  vimeo:
+    disable: true
+  youtube:
+    disable: true

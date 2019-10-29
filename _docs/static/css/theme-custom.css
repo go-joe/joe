@@ -1,0 +1,298 @@
+@import "syntax.css";
+
+body {
+    font-family: "Raleway", sans-serif;
+    font-weight: 300;
+
+}
+
+@media (min-width: 48rem) {
+    body {
+        font-size: 16px !important;
+    }
+}
+
+@media (min-width: 20rem) {
+
+}
+
+@media (min-width: 58rem) {
+    body {
+        font-size: 20px !important;
+    }
+}
+
+:root{
+
+    --MAIN-TEXT-color:#323232; /* Color of text by default */
+    --MAIN-TITLES-TEXT-color: #5e5e5e; /* Color of titles h2-h3-h4-h5 */
+    --MAIN-LINK-color:#1C90F3; /* Color of links */
+    --MAIN-LINK-HOVER-color:#167ad0; /* Color of hovered links */
+    --MAIN-ANCHOR-color: #1C90F3; /* color of anchors on titles */
+
+    --MENU-HEADER-BG-color:#1C90F3; /* Background color of menu header */
+    --MENU-HEADER-BORDER-color:#33a1ff; /*Color of menu header border */
+
+    --MENU-SEARCH-BG-color:#167ad0; /* Search field background color (by default borders + icons) */
+    --MENU-SEARCH-BOX-color: #33a1ff; /* Override search field border color */
+    --MENU-SEARCH-BOX-ICONS-color: #a1d2fd; /* Override search field icons color */
+
+    --MENU-SECTIONS-ACTIVE-BG-color:#20272b; /* Background color of the active section and its childs */
+    --MENU-SECTIONS-BG-color:#252c31; /* Background color of other sections */
+    --MENU-SECTIONS-LINK-color: #ccc; /* Color of links in menu */
+    --MENU-SECTIONS-LINK-HOVER-color: #e6e6e6;  /* Color of links in menu, when hovered */
+    --MENU-SECTION-ACTIVE-CATEGORY-color: #777; /* Color of active category text */
+    --MENU-SECTION-ACTIVE-CATEGORY-BG-color: #fff; /* Color of background for the active category (only) */
+
+    --MENU-VISITED-color: #33a1ff; /* Color of 'page visited' icons in menu */
+    --MENU-SECTION-HR-color: #20272b; /* Color of <hr> separator in menu */
+
+}
+
+body {
+    color: var(--MAIN-TEXT-color) !important;
+}
+
+textarea:focus, input[type="email"]:focus, input[type="number"]:focus, input[type="password"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="text"]:focus, input[type="url"]:focus, input[type="color"]:focus, input[type="date"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="month"]:focus, input[type="time"]:focus, input[type="week"]:focus, select[multiple=multiple]:focus {
+    border-color: none;
+    box-shadow: none;
+}
+
+h2, h3, h4, h5 {
+    color: var(--MAIN-TITLES-TEXT-color) !important;
+}
+
+a {
+    color: var(--MAIN-LINK-color);
+}
+
+.anchor {
+    color: var(--MAIN-ANCHOR-color);
+}
+
+a:hover {
+    color: var(--MAIN-LINK-HOVER-color);
+}
+
+#sidebar ul li.visited > a .read-icon {
+    color: var(--MENU-VISITED-color);
+}
+
+#body a.highlight:after {
+    display: block;
+    content: "";
+    height: 1px;
+    width: 0%;
+    -webkit-transition: width 0.5s ease;
+    -moz-transition: width 0.5s ease;
+    -ms-transition: width 0.5s ease;
+    transition: width 0.5s ease;
+    background-color: var(--MAIN-LINK-HOVER-color);
+}
+#sidebar {
+    background-color: var(--MENU-SECTIONS-BG-color);
+}
+#sidebar #header-wrapper {
+    background: var(--MENU-HEADER-BG-color);
+    color: var(--MENU-SEARCH-BOX-color);
+    border-color: var(--MENU-HEADER-BORDER-color);
+}
+#sidebar .searchbox {
+    border-color: var(--MENU-SEARCH-BOX-color);
+    background: var(--MENU-SEARCH-BG-color);
+}
+#sidebar ul.topics > li.parent, #sidebar ul.topics > li.active {
+    background: var(--MENU-SECTIONS-ACTIVE-BG-color);
+}
+#sidebar .searchbox * {
+    color: var(--MENU-SEARCH-BOX-ICONS-color);
+}
+
+#sidebar a {
+    color: var(--MENU-SECTIONS-LINK-color);
+}
+
+#sidebar a:hover {
+    color: var(--MENU-SECTIONS-LINK-HOVER-color);
+}
+
+#sidebar ul li.active > a {
+    background: var(--MENU-SECTION-ACTIVE-CATEGORY-BG-color);
+    color: var(--MENU-SECTION-ACTIVE-CATEGORY-color) !important;
+}
+
+#sidebar hr {
+    border-color: var(--MENU-SECTION-HR-color);
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    margin-bottom: .5rem;
+    font-weight: bold;
+    line-height: 1.25;
+    color: #313131;
+    text-rendering: optimizeLegibility;
+}
+h1 {
+    margin-bottom: 28px;
+    font-size: 2rem;
+}
+h2 {
+    margin-top: 1rem;
+    font-size: 1.5rem;
+}
+h3 {
+    margin-top: 1.5rem;
+    font-size: 1.25rem;
+}
+h4, h5, h6 {
+    margin-top: 1rem;
+    font-size: 1rem;
+}
+
+.content {
+    padding-top: 0;
+}
+
+#body-inner p {
+    text-align: justify;
+}
+
+div.post {
+    margin-bottom: 2em;
+}
+
+.posts {
+    margin-top: 26.5px;
+}
+
+.gopher {
+    font-family: Menlo, Monaco, "Courier New", monospace;
+    font-size: 85%;
+    color: #bf616a;
+    white-space: nowrap;
+    float: right;
+    padding: .25em 0 .25em .5em;
+}
+
+pre {
+    border-radius: 8px;
+    font-size: 70%;
+    overflow: auto;
+    white-space: pre;
+    word-wrap: normal;
+    line-height: 1.45;
+}
+
+.copyright,
+.poweredby
+{
+    font-size: 12px;
+    font-weight: 300;
+}
+
+.center {
+    display: block;
+
+    margin-right: auto;
+    margin-left: auto;
+}
+/* Changing from font-awesome 4 to 5, the class pull-right was removed */
+.pull-right {
+    float: right;
+}
+
+ul.posts {
+    list-style: none;
+    padding-left: 0;
+}
+
+ul.posts li {
+    padding-bottom: 1em;
+}
+
+ul.posts li .title {
+    display: block;
+    line-height: 25px;
+    padding-bottom: 10px
+}
+
+ul.posts li .title a {
+    font-size: 1.5rem;
+}
+
+code {
+    padding: .25em .5em;
+    font-size: 85%;
+    color: #bf616a;
+    background-color: #f9f9f9;
+    border: 0;
+    border-radius: 20px;
+}
+
+/* Keep copy to clipboard buttons on big code examples */
+pre code + .copy-to-clipboard {
+    display: inline-block;
+}
+
+/* Disable copy to clipboard buttons on small code examples */
+code + .copy-to-clipboard {
+    display: none;
+}
+
+section#footer {
+    position: absolute;
+    bottom: 0;
+    padding-bottom: 40px;
+}
+
+/***** Fork me on Github *****/
+
+#fork-me-on-github {
+    opacity           : 0.8;
+    background-color  : black;
+    color             : #FFF;
+    display           : block;
+    position          : fixed;
+    z-index           : 10;
+    right             : -6em;
+    top               : 3em;
+    padding           : 0.5em 5em 0.4em 5em;
+    -webkit-transform : rotate(45deg) scale(0.75, 1);
+    transform         : rotate(45deg) scale(0.75, 1);
+    box-shadow        : 0 0 0.5em rgba(0, 0, 0, 0.5);
+    text-shadow       : 0 0 0.75em #444;
+    font              : bold 16px/1.2em Arial, Sans-Serif;
+    text-align        : center;
+    text-decoration   : none;
+    letter-spacing    : .05em;
+}
+
+#fork-me-on-github:before {
+    content           : '';
+    position          : absolute;
+    top               : 0;
+    bottom            : 0;
+    left              : 0;
+    right             : 0;
+    border            : 2px rgba(255, 255, 255, 0.7) dashed;
+    margin            : -0.3em -5em;
+    -webkit-transform : scale(0.7);
+    transform         : scale(0.7);
+}
+
+#fork-me-on-github:hover { opacity : 1; }
+
+h2#features+ul, h2#design+ul {
+    font-size: 90%;
+}
+
+h1#joe-bot {
+    font-size: 3em;
+    margin-bottom: 0;
+}
+
+h1#joe-bot+p {
+    text-align: center;
+    margin-top: 0;
+}

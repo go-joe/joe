@@ -361,7 +361,7 @@ This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICE
 ## Acknowledgments
 
 - [Hubot][hubot] and its great community for the inspiration
-- [embedmd][embedmd] for a cool tool to embed source code in markdown files
+- [embedmd][campoy-embedmd] for a cool tool to embed source code in markdown files
 
 [go]: https://golang.org
 [hubot]: https://hubot.github.com/
@@ -369,4 +369,4 @@ This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICE
 [joe-http]: https://github.com/go-joe/http-server
 [tags]: https://github.com/go-joe/joe/tags
 [contributors]: https://github.com/go-joe/joe/contributors
-[embedmd]: https://github.com/campoy/embedmd
+[campoy-embedmd]: https://github.com/campoy/embedmd
