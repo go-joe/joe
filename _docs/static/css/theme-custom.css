@@ -299,9 +299,9 @@ code + .copy-to-clipboard {
 }
 
 section#footer {
-    position: absolute;
-    bottom: 0;
-    padding-bottom: 40px;
+    padding: 0px;
+    margin-left: 16px;
+    margin-top: 16px;
 }
 
 /***** Fork me on Github *****/
