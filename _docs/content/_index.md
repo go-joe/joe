@@ -33,9 +33,8 @@ Last but not least, you can find more instructions and best practices in the [**
 To contribute to Joe, you can either write your own Module (e.g. to integrate
 another chat adapter) or work on Joe's code directly. You can of course also
 extend or improve this documentation or help with reviewing issues and pull
-requests on GitHub. Please open an issue or submit pull requests at
-https://github.com/go-joe/joe if you came across any issues. Further details
-for how to contribute  can be found in the [CONTRIBUTING.md][contributing] file.
+requests at https://github.com/go-joe/joe. Further details about how to
+contribute can be found in the [CONTRIBUTING.md][contributing] file.
 
 ## License
 

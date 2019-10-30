@@ -6,19 +6,47 @@ body {
 
 }
 
+@media (min-width: 20rem) {
+    #fork-me-on-github {
+        font-size: 12px;
+        right: -7em;
+        top:   2em;
+    }
+    pre code {
+        font-size: 12px;
+    }
+}
+
 @media (min-width: 48rem) {
     body {
         font-size: 16px !important;
     }
-}
-
-@media (min-width: 20rem) {
-
+    h1#joe-bot {
+        font-size: 3em;
+    }
+    #fork-me-on-github {
+        font-size: 12px;
+        right: -6em;
+        top:   3em;
+    }
+    pre code {
+        font-size: 12px;
+    }
 }
 
 @media (min-width: 58rem) {
     body {
         font-size: 20px !important;
+    }
+    h1#joe-bot {
+        font-size: 3em;
+    }
+    #fork-me-on-github {
+        right: -6em;
+        top:   3em;
+    }
+    pre code {
+        font-size: 15px;
     }
 }
 
@@ -228,6 +256,7 @@ code {
     background-color: #f9f9f9;
     border: 0;
     border-radius: 20px;
+    white-space: pre !important;
 }
 
 /* Keep copy to clipboard buttons on big code examples */
@@ -255,8 +284,6 @@ section#footer {
     display           : block;
     position          : fixed;
     z-index           : 10;
-    right             : -6em;
-    top               : 3em;
     padding           : 0.5em 5em 0.4em 5em;
     -webkit-transform : rotate(45deg) scale(0.75, 1);
     transform         : rotate(45deg) scale(0.75, 1);
@@ -288,7 +315,6 @@ h2#features+ul, h2#design+ul {
 }
 
 h1#joe-bot {
-    font-size: 3em;
     margin-bottom: 0;
 }
 
