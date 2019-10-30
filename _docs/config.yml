@@ -7,6 +7,7 @@ params:
   themeVariant: "custom" # see static/css/theme-custom.css
   author: Friedrich Große
   description: A general-purpose bot library
+  editURL: "https://github.com/go-joe/joe/edit/master/_docs/content/"
 
 enableEmoji: true
 
