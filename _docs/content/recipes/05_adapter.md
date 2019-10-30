@@ -5,13 +5,14 @@ weight = 5
 +++
 
 Adapters let you interact with the outside world by receiving and sending messages.
-Joe currently has the following five Adapter implementations:
+Joe currently has the following six Adapter implementations:
 
 - <i class="fas fa-terminal"></i> CLI Adapter: https://github.com/go-joe/joe
 - <i class='fab fa-slack fa-fw'></i> Slack Adapter: https://github.com/go-joe/slack-adapter
 - <i class='fab fa-rocketchat fa-fw'></i> Rocket.Chat Adapter: https://github.com/dwmunster/rocket-adapter
 - <i class='fab fa-telegram fa-fw'></i> Telegram Adapter: https://github.com/robertgzr/joe-telegram-adapter
-- <i class='fas fa-hashtag fa-fw'></i> IRC Adapter: https://github.com/akrennmair/joe-irc-adapter 
+- <i class='fas fa-hashtag fa-fw'></i> IRC Adapter: https://github.com/akrennmair/joe-irc-adapter
+- <i class="fas fa-circle-notch"></i> Mattermost Adapter: https://github.com/dwmunster/joe-mattermost-adapter 
 
 If you want to integrate with a chat service that is not listed above, you can
 write your own Adapter implementation.
