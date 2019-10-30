@@ -1,4 +1,8 @@
-# - Joe Bot :robot: -
++++
+title = "Start"
++++
+
+<h1 id="joe-bot">- Joe Bot <img class='bot-face inline' src='/images/bot.png' style="height: 65px; vertical-align: text-top;"> -</h1>
 
 Joe is a library used to write chat bots in [the Go programming language][go].
 
@@ -6,7 +10,7 @@ Joe is a library used to write chat bots in [the Go programming language][go].
 
 ## Features
 
-- **Chat adapters** for <i class='fab fa-slack fa-fw'></i> Slack, <i class='fab fa-rocketchat fa-fw'></i> Rocket.Chat, <i class='fab fa-telegram fa-fw'></i> Telegram and <i class='fas fa-hashtag fa-fw'></i> IRC. Adding your own is easy as well.  
+- **Chat adapters** for <i class='fab fa-slack fa-fw'></i> Slack, <i class='fab fa-rocketchat fa-fw'></i> Rocket.Chat, <i class='fab fa-telegram fa-fw'></i> Telegram, <i class="fas fa-circle-notch"></i> Mattermost and <i class='fas fa-hashtag fa-fw'></i> IRC. Adding your own is easy as well.  
 - **Event processing system** to consume HTTP callbacks (e.g. from GitHub) or to trigger events on a schedule using Cron expressions
 - **Persistence** of key-value data (e.g. using Redis or SQL)
 - **User permissions** to restrict some actions to privileged users

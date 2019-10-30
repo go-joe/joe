@@ -61,8 +61,8 @@ body {
     --MENU-HEADER-BG-color:#1C90F3; /* Background color of menu header */
     --MENU-HEADER-BORDER-color:#33a1ff; /*Color of menu header border */
 
-    --MENU-SEARCH-BG-color:#167ad0; /* Search field background color (by default borders + icons) */
-    --MENU-SEARCH-BOX-color: #33a1ff; /* Override search field border color */
+    --MENU-SEARCH-BG-color: white; /* Search field background color (by default borders + icons) */
+    --MENU-SEARCH-BOX-color: black; /* Override search field border color */
     --MENU-SEARCH-BOX-ICONS-color: #a1d2fd; /* Override search field icons color */
 
     --MENU-SECTIONS-ACTIVE-BG-color:#20272b; /* Background color of the active section and its childs */
@@ -128,6 +128,7 @@ a:hover {
 #sidebar .searchbox {
     border-color: var(--MENU-SEARCH-BOX-color);
     background: var(--MENU-SEARCH-BG-color);
+    margin: 16px 16px 0;
 }
 #sidebar ul.topics > li.parent, #sidebar ul.topics > li.active {
     background: var(--MENU-SECTIONS-ACTIVE-BG-color);
@@ -163,7 +164,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 h1 {
     margin-bottom: 28px;
-    font-size: 2rem;
 }
 h2 {
     margin-top: 1rem;
@@ -176,6 +176,11 @@ h3 {
 h4, h5, h6 {
     margin-top: 1rem;
     font-size: 1rem;
+}
+
+#logo h1 {
+    font-size: 2rem;
+    margin-bottom: 28px;
 }
 
 .content {

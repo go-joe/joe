@@ -1,4 +1,4 @@
-<h1 align="center">Joe Bot</h1>
+<h1 align="center">Joe Bot :robot:</h1>
 <p align="center">A general-purpose bot library inspired by Hubot but written in Go.</p>
 <p align="center">
     <a href="https://joe-bot.net"><img src="https://img.shields.io/badge/website-joe--bot.net-brightgreen"></a>
