@@ -317,6 +317,7 @@ open a pull request.
 - Rocket.Chat Adapter: https://github.com/dwmunster/rocket-adapter
 - Telegram Adapter: https://github.com/robertgzr/joe-telegram-adapter
 - IRC Adapter: https://github.com/akrennmair/joe-irc-adapter
+- Mattermost Adapter: https://github.com/dwmunster/joe-mattermost-adapter
 
 ### Memory Modules
 
