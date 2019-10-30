@@ -7,6 +7,14 @@ body {
 }
 
 @media (min-width: 20rem) {
+    h1 {
+        font-size: 2em;
+    }
+
+    h1#joe-bot img {
+        height: 34px;
+    }
+
     #fork-me-on-github {
         font-size: 12px;
         right: -7em;
@@ -21,9 +29,15 @@ body {
     body {
         font-size: 16px !important;
     }
+
     h1#joe-bot {
         font-size: 3em;
     }
+
+    h1#joe-bot img {
+        height: 52px;
+    }
+
     #fork-me-on-github {
         font-size: 12px;
         right: -6em;
@@ -38,9 +52,15 @@ body {
     body {
         font-size: 20px !important;
     }
+
     h1#joe-bot {
         font-size: 3em;
     }
+
+    h1#joe-bot img {
+        height: 65px;
+    }
+
     #fork-me-on-github {
         right: -6em;
         top:   3em;
@@ -75,6 +95,10 @@ body {
     --MENU-VISITED-color: #33a1ff; /* Color of 'page visited' icons in menu */
     --MENU-SECTION-HR-color: #20272b; /* Color of <hr> separator in menu */
 
+}
+
+h1#joe-bot img {
+    vertical-align: text-top !important;
 }
 
 body {

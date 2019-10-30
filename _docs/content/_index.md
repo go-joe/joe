@@ -2,7 +2,7 @@
 title = "Start"
 +++
 
-<h1 id="joe-bot">- Joe Bot <img class='bot-face inline' src='/images/bot.png' style="height: 65px; vertical-align: text-top;"> -</h1>
+<h1 id="joe-bot">- Joe Bot <img class='bot-face inline' src='/images/bot.png'> -</h1>
 
 Joe is a library used to write chat bots in [the Go programming language][go].
 
