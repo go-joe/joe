@@ -27,7 +27,7 @@ Joe is a library used to write chat bots in [the Go programming language][go].
 
 To get started writing your own bot with Joe, head over to the
 [**Quickstart**](/quick) section or directly have a look at the
-[**Basic Tutorials**](/basic) to learn the core concepts.
+[**Basic Tutorials**](/basics) to learn the core concepts.
 If you want to dive right in and want to know what modules are currently provided
 by the community, then have a look at the [**Available Modules**](/modules) section.
 Last but not least, you can find more instructions and best practices in the [**Recipes**](/recipes) section. 
