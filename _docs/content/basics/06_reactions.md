@@ -14,7 +14,7 @@ Currently the following chat adapters support reactions:
 
 - <i class="fas fa-terminal"></i> CLI Adapter: https://github.com/go-joe/joe
 - <i class='fab fa-slack fa-fw'></i> Slack Adapter: https://github.com/go-joe/slack-adapter
-- <i class='fab fa-rocketchat fa-fw'></i> Rocket.Chat Adapter: https://github.com/dwmunster/rocket-adapter
+- <i class='fas fa-circle-notch'></i> Mattermost Adapter: https://github.com/dwmunster/joe-mattermost-adapter
 
 The following example shows how you can use reactions in your message handlers:
 
