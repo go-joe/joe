@@ -1,11 +1,12 @@
 package main
 
 import (
+	"errors"
+
 	joehttp "github.com/go-joe/http-server"
 	"github.com/go-joe/joe"
 	"github.com/go-joe/redis-memory"
 	"github.com/go-joe/slack-adapter"
-	"github.com/pkg/errors"
 )
 
 // Config holds all parameters to setup a new chat bot.

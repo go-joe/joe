@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"
+
 	joehttp "github.com/go-joe/http-server"
 	"github.com/go-joe/joe"
-	"github.com/pkg/errors"
 )
 
 type Bot struct {
@@ -25,7 +26,7 @@ func New(conf Config) *Bot {
 
 func New2(conf Config) (*Bot, error) {
 	if err := conf.Validate(); err != nil {
-		return nil, errors.Wrap(err, "invalid configuration")
+		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
 	b := &Bot{

@@ -2,13 +2,13 @@ package joe
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"sync"
 
 	"github.com/go-joe/joe/reactions"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -163,7 +163,7 @@ func (a *CLIAdapter) React(r reactions.Reaction, _ Message) error {
 // Calling this function more than once will result in an error.
 func (a *CLIAdapter) Close() error {
 	if a.closing == nil {
-		return errors.Errorf("already closed")
+		return errors.New("already closed")
 	}
 
 	a.Logger.Debug("Closing CLIAdapter")

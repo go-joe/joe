@@ -48,10 +48,11 @@ define them as functions on a custom `ExampleBot`type which embeds the `joe.Bot`
 package main
 
 import (
+	"fmt"
+
 	"github.com/go-joe/joe"
 	"github.com/go-joe/redis-memory"
 	"github.com/go-joe/slack-adapter"
-	"github.com/pkg/errors"
 )
 
 type ExampleBot struct {
@@ -86,7 +87,7 @@ func (b *ExampleBot) WhatIs(msg joe.Message) error {
 	var value string
 	ok, err := b.Store.Get(key, &value)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve key %q from brain", key)
+		return fmt.Errorf("failed to retrieve key %q from brain: %w", key, err)
 	}
 
 	if ok {

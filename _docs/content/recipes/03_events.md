@@ -73,9 +73,10 @@ request body it into another event type:
 
 ```go
 import (
+	"fmt"
+
 	"encoding/json"
 	joehttp "github.com/go-joe/http-server"
-	"github.com/pkg/errors"
 )
 
 func (b *Bot) HTTPCallback(req joehttp.RequestEvent) error {
@@ -86,7 +87,7 @@ func (b *Bot) HTTPCallback(req joehttp.RequestEvent) error {
 	var event GitLabEvent
 	err := json.Unmarshal(req.Body, &event)
 	if err != nil {
-		return errors.Wrap(err, "failed to unmarshal gitlab event as JSON")
+		return fmt.Errorf("failed to unmarshal gitlab event as JSON: %w", err)
 	}
 
 	b.Brain.Emit(event)

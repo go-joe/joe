@@ -1,9 +1,10 @@
 package joe
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -48,7 +49,7 @@ func (a *Auth) CheckPermission(scope, userID string) error {
 	key := a.permissionsKey(userID)
 	permissions, err := a.loadPermissions(key)
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	a.logger.Debug("Checking user permissions",
@@ -71,7 +72,7 @@ func (a *Auth) Users() ([]string, error) {
 
 	keys, err := a.store.Keys()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load permissions")
+		return nil, fmt.Errorf("failed to load permissions: %w", err)
 	}
 
 	var userIDs []string
@@ -94,7 +95,7 @@ func (a *Auth) UserPermissions(userID string) ([]string, error) {
 	key := a.permissionsKey(userID)
 	permissions, err := a.loadPermissions(key)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 
 	return permissions, nil
@@ -104,7 +105,7 @@ func (a *Auth) loadPermissions(key string) ([]string, error) {
 	var permissions []string
 	ok, err := a.store.Get(key, &permissions)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load user permissions")
+		return nil, fmt.Errorf("failed to load user permissions: %w", err)
 	}
 
 	if !ok {
@@ -134,7 +135,7 @@ func (a *Auth) Grant(scope, userID string) (bool, error) {
 	key := a.permissionsKey(userID)
 	oldPermissions, err := a.loadPermissions(key)
 	if err != nil {
-		return false, errors.WithStack(err)
+		return false, err
 	}
 
 	newPermissions := make([]string, 0, len(oldPermissions)+1)
@@ -172,7 +173,7 @@ func (a *Auth) Revoke(scope, userID string) (bool, error) {
 	key := a.permissionsKey(userID)
 	oldPermissions, err := a.loadPermissions(key)
 	if err != nil {
-		return false, errors.WithStack(err)
+		return false, err
 	}
 
 	if len(oldPermissions) == 0 {
@@ -188,7 +189,7 @@ func (a *Auth) Revoke(scope, userID string) (bool, error) {
 		}
 
 		if strings.HasPrefix(scope, p) {
-			return false, errors.Errorf("cannot revoke scope %q because the user still has the more general scope %q", scope, p)
+			return false, fmt.Errorf("cannot revoke scope %q because the user still has the more general scope %q", scope, p)
 		}
 
 		newPermissions = append(newPermissions, p)
@@ -206,7 +207,7 @@ func (a *Auth) Revoke(scope, userID string) (bool, error) {
 	if len(newPermissions) == 0 {
 		_, err := a.store.Delete(key)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to delete last user permission")
+			return false, fmt.Errorf("failed to delete last user permission: %w", err)
 		}
 
 		return true, nil
@@ -219,7 +220,7 @@ func (a *Auth) Revoke(scope, userID string) (bool, error) {
 func (a *Auth) updatePermissions(key string, permissions []string) error {
 	err := a.store.Set(key, permissions)
 	if err != nil {
-		return errors.Wrap(err, "failed to update user permissions")
+		return fmt.Errorf("failed to update user permissions: %w", err)
 	}
 
 	return nil
