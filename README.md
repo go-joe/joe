@@ -117,6 +117,7 @@ open a pull request.
 - Telegram Adapter: https://github.com/robertgzr/joe-telegram-adapter
 - IRC Adapter: https://github.com/akrennmair/joe-irc-adapter
 - Mattermost Adapter: https://github.com/dwmunster/joe-mattermost-adapter
+- VK Adapter: https://github.com/tdakkota/joe-vk-adapter
 
 ### Memory Modules
 
