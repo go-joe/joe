@@ -20,6 +20,7 @@ Adapters let you interact with the outside world by receiving and sending messag
 - <i class='fab fa-telegram fa-fw'></i> Telegram Adapter: https://github.com/robertgzr/joe-telegram-adapter
 - <i class='fas fa-hashtag fa-fw'></i> IRC Adapter: https://github.com/akrennmair/joe-irc-adapter
 - <i class="fas fa-circle-notch"></i> Mattermost Adapter: https://github.com/dwmunster/joe-mattermost-adapter
+- <i class='fab fa-vk'></i> VK Adapter: https://github.com/tdakkota/joe-vk-adapter
 
 ### Memory Modules
 <p style="font-size: 80%;margin-top: 0px;">
