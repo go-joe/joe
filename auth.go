@@ -69,17 +69,15 @@ func (a *Auth) CheckPermission(scope, userID string) error {
 func (a *Auth) Users() ([]string, error) {
 	a.logger.Debug("Retrieving all user IDs from storage")
 
-	keys, err := a.store.Keys()
+	keys, err := a.store.KeysWithPrefix(permissionKeyPrefix)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load permissions")
 	}
 
 	var userIDs []string
 	for _, key := range keys {
-		if strings.HasPrefix(key, permissionKeyPrefix) {
-			userID := strings.TrimPrefix(key, permissionKeyPrefix)
-			userIDs = append(userIDs, userID)
-		}
+		userID := strings.TrimPrefix(key, permissionKeyPrefix)
+		userIDs = append(userIDs, userID)
 	}
 
 	return userIDs, nil
