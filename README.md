@@ -39,10 +39,9 @@ data in-memory which means it will forget anything you told it when it is restar
 This default setup is useful for local development without any dependencies but
 you will quickly want to add other _Modules_ to extend the bots capabilities.
 
-For instance we can extend the previous example to connect the Bot with a Slack
-workspace and store key-value data in Redis. To allow the message handlers to
-access the memory we define them as functions on a custom `ExampleBot`type which
-embeds the `joe.Bot`.
+The following example connects the Bot with a Slack workspace and stores
+key-value data in Redis. To allow the message handlers to access the memory we
+define them as functions on a custom `ExampleBot`type which embeds the `joe.Bot`.
 
 [embedmd]:# (_examples/02_useful/main.go)
 ```go
