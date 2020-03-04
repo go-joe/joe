@@ -134,7 +134,7 @@ open a pull request.
 ## Built With
 
 * [zap](https://github.com/uber-go/zap) - Blazing fast, structured, leveled logging in Go
-* [pkg/errors](https://github.com/pkg/errors) - Simple error handling primitives
+* [multierr](go.uber.org/multierr) - Package multierr allows combining one or more errors together 
 * [testify](https://github.com/stretchr/testify) - A simple unit test library
 
 ## Contributing
