@@ -33,11 +33,12 @@ linters:
   disable:
     - maligned
     - prealloc
-    - depguard
     - interfacer
+    - wsl
+    - gomnd
 
 service:
-  golangci-lint-version: 1.19.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.23.x # use the fixed version to not introduce new linters unexpectedly
   prepare:
     - GO111MODULE=on go mod vendor # required currently or golangci breaks
 
