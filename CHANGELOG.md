@@ -8,7 +8,8 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 Once we reach the v1.0 release, this project will adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-Nothing so far
+- Use error wrapping from standard library instead of `github.com/pgk/errors`
+- Update Module to Go 1.14
 
 ## [v0.10.0] - 2019-10-26
 - Allow event handlers to also use scalar event types (fixes #14)
