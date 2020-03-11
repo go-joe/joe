@@ -2,6 +2,7 @@ package joe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -10,7 +11,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -145,7 +145,7 @@ func (b *Brain) RegisterHandler(fun interface{}) {
 	err := b.registerHandler(fun)
 	if err != nil {
 		caller := firstExternalCaller()
-		err = errors.Wrap(err, caller)
+		err = fmt.Errorf("%s: %w", caller, err)
 		b.registrationErrs = append(b.registrationErrs, err)
 	}
 }
@@ -456,7 +456,7 @@ func checkHandlerReturnValues(handlerFunc reflect.Type) (returnsError bool, err 
 		}
 		return true, nil
 	default:
-		return false, errors.Errorf("event handler has more than one return value")
+		return false, fmt.Errorf("event handler has more than one return value")
 	}
 }
 
@@ -464,7 +464,7 @@ func newHandlerFunc(handler reflect.Value, withContext, returnsErr bool) eventHa
 	return func(ctx context.Context, evt reflect.Value) (handlerErr error) {
 		defer func() {
 			if err := recover(); err != nil {
-				handlerErr = errors.Errorf("handler panic: %v", err)
+				handlerErr = fmt.Errorf("handler panic: %v", err)
 			}
 		}()
 

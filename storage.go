@@ -2,10 +2,10 @@ package joe
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"sync"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -88,7 +88,7 @@ func (s *Storage) Keys() ([]string, error) {
 func (s *Storage) Set(key string, value interface{}) error {
 	data, err := s.encoder.Encode(value)
 	if err != nil {
-		return errors.Wrap(err, "encode data")
+		return fmt.Errorf("encode data: %w", err)
 	}
 
 	s.mu.Lock()
@@ -110,7 +110,7 @@ func (s *Storage) Get(key string, value interface{}) (bool, error) {
 	data, ok, err := s.memory.Get(key)
 	s.mu.RUnlock()
 	if err != nil {
-		return false, errors.WithStack(err)
+		return false, err
 	}
 
 	if !ok || value == nil {
@@ -119,7 +119,7 @@ func (s *Storage) Get(key string, value interface{}) (bool, error) {
 
 	err = s.encoder.Decode(data, value)
 	if err != nil {
-		return false, errors.Wrap(err, "decode data")
+		return false, fmt.Errorf("decode data: %w", err)
 	}
 
 	return true, nil

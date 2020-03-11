@@ -2,13 +2,13 @@ package joe_test
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"testing"
 	"time"
 
 	"github.com/go-joe/joe"
 	"github.com/go-joe/joe/joetest"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

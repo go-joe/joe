@@ -9,7 +9,7 @@ orbs:
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.12
+      - image: cimg/go:1.14
 
     steps:
       - checkout

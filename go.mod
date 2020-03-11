@@ -1,11 +1,9 @@
 module github.com/go-joe/joe
 
-go 1.12
+go 1.14
 
 require (
-	github.com/pkg/errors v0.8.1
-	github.com/stretchr/testify v1.3.0
-	go.uber.org/atomic v1.3.2 // indirect
-	go.uber.org/multierr v1.1.0
-	go.uber.org/zap v1.9.1
+	github.com/stretchr/testify v1.4.0
+	go.uber.org/multierr v1.5.0
+	go.uber.org/zap v1.14.0
 )
