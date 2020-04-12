@@ -41,7 +41,7 @@ can be found in the [Bot Configuration](/recipes/config) recipe.
 ```go
 import (
 	"github.com/go-joe/joe"
-	joeSlack "github.com/go-joe/slack-adapter"
+	joeSlack "github.com/go-joe/slack-adapter/v2"
 	"github.com/nlopes/slack"
 )
 
