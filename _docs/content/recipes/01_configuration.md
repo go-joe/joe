@@ -93,7 +93,7 @@ func (conf Config) Validate() error {
 ```go
 func New2(conf Config) (*Bot, error) {
 	if err := conf.Validate(); err != nil {
-		return nil, errors.Wrap(err, "invalid configuration")
+		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
 	b := &Bot{

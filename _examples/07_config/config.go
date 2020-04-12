@@ -6,7 +6,7 @@ import (
 	joehttp "github.com/go-joe/http-server"
 	"github.com/go-joe/joe"
 	"github.com/go-joe/redis-memory"
-	"github.com/go-joe/slack-adapter"
+	"github.com/go-joe/slack-adapter/v2"
 )
 
 // Config holds all parameters to setup a new chat bot.
