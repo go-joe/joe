@@ -8,6 +8,9 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 Once we reach the v1.0 release, this project will adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Nothing so far
+
+## [v0.11.0] - 2020-07-26
 - Use error wrapping from standard library instead of `github.com/pgk/errors`
 - Update Module to Go 1.14
 - Change default log level from Debug to Info
@@ -92,7 +95,8 @@ Once we reach the v1.0 release, this project will adhere to [Semantic Versioning
 Initial release, note that Joe is still in alpha and the API is not yet considered
 stable before the v1.0.0 release.
 
-[Unreleased]: https://github.com/go-joe/joe/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/go-joe/joe/compare/v0.11.0...HEAD
+[v0.10.0]: https://github.com/go-joe/joe/compare/v0.10.0...v0.11.0
 [v0.10.0]: https://github.com/go-joe/joe/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/go-joe/joe/compare/v0.8.0...v0.9.0
 [v0.8.0]: https://github.com/go-joe/joe/compare/v0.7.0...v0.8.0
