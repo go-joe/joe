@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Config is the configuration of a Bot that can be used or changed during setup
@@ -15,11 +16,12 @@ type Config struct {
 	Name           string
 	HandlerTimeout time.Duration
 
-	logger  *zap.Logger
-	brain   *Brain
-	store   *Storage
-	adapter Adapter
-	errs    []error
+	logger   *zap.Logger
+	logLevel zapcore.Level
+	brain    *Brain
+	store    *Storage
+	adapter  Adapter
+	errs     []error
 }
 
 // NewConfig creates a new Config that is used to setup the underlying
@@ -94,6 +96,14 @@ func WithHandlerTimeout(timeout time.Duration) Module {
 func WithLogger(logger *zap.Logger) Module {
 	return loggerModule(func(conf *Config) error {
 		conf.logger = logger
+		return nil
+	})
+}
+
+// WithLogLevel is an option to change the default log level of a bot.
+func WithLogLevel(level zapcore.Level) Module {
+	return loggerModule(func(conf *Config) error {
+		conf.logLevel = level
 		return nil
 	})
 }

@@ -138,7 +138,7 @@ func cliContext() context.Context {
 }
 
 func newLogger(modules []Module) *zap.Logger {
-	var conf Config
+	conf := Config{logLevel: zap.InfoLevel}
 	for _, mod := range modules {
 		if x, ok := mod.(loggerModule); ok {
 			_ = x(&conf)
@@ -150,7 +150,7 @@ func newLogger(modules []Module) *zap.Logger {
 	}
 
 	cfg := zap.Config{
-		Level:       zap.NewAtomicLevelAt(zap.DebugLevel),
+		Level:       zap.NewAtomicLevelAt(conf.logLevel),
 		Development: false,
 		Encoding:    "console",
 		EncoderConfig: zapcore.EncoderConfig{

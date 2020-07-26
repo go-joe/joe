@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
 
@@ -52,8 +53,18 @@ func TestWithHandlerTimeout(t *testing.T) {
 	assert.Equal(t, 42*time.Millisecond, conf.HandlerTimeout)
 }
 
-// TestBot_Logger simply tests that the zap logger configuration in newLogger()
+func TestWithLogLevel(t *testing.T) {
+	mod := WithLogLevel(zap.ErrorLevel)
+
+	logger := newLogger([]Module{mod})
+
+	assert.Nil(t, logger.Check(zap.DebugLevel, "test"))
+	assert.Nil(t, logger.Check(zap.InfoLevel, "test"))
+	assert.NotNil(t, logger.Check(zap.ErrorLevel, "test"))
+}
+
+// TestNewLogger simply tests that the zap logger configuration in newLogger()
 // doesn't panic.
-func TestBot_Logger(t *testing.T) {
+func TestNewLogger(t *testing.T) {
 	newLogger(nil)
 }
