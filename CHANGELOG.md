@@ -11,6 +11,7 @@ Once we reach the v1.0 release, this project will adhere to [Semantic Versioning
 - Use error wrapping from standard library instead of `github.com/pgk/errors`
 - Update Module to Go 1.14
 - Change default log level from Debug to Info
+- Add `WithLogLevel(…)` option for changing the default log level
 
 ## [v0.10.0] - 2019-10-26
 - Allow event handlers to also use scalar event types (fixes #14)
