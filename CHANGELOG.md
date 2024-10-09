@@ -8,7 +8,7 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 Once we reach the v1.0 release, this project will adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Nothing so far
+- Fix issue on Windows machines go-joe/joe#51
 
 ## [v0.11.0] - 2020-07-26
 - Use error wrapping from standard library instead of `github.com/pgk/errors`
