@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"sync"
 
 	"github.com/go-joe/joe/reactions"
@@ -134,7 +135,7 @@ func (a *CLIAdapter) readLines() <-chan string {
 		default:
 			platformSpecificNum = 1
 		}
-		
+
 		// This goroutine will exit when we call a.Input.Close() which will make
 		// r.ReadString(…) return an io.EOF.
 		for {
