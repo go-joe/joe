@@ -127,6 +127,14 @@ func (a *CLIAdapter) readLines() <-chan string {
 	r := bufio.NewReader(a.Input)
 	lines := make(chan string)
 	go func() {
+		var platformSpecificNum int
+		switch runtime.GOOS {
+		case "windows":
+			platformSpecificNum = 2
+		default:
+			platformSpecificNum = 1
+		}
+		
 		// This goroutine will exit when we call a.Input.Close() which will make
 		// r.ReadString(…) return an io.EOF.
 		for {
@@ -140,7 +148,7 @@ func (a *CLIAdapter) readLines() <-chan string {
 				return
 			}
 
-			lines <- line[:len(line)-1]
+			lines <- line[:len(line)-platformSpecificNum]
 		}
 	}()
 
