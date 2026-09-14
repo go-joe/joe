@@ -1,7 +1,6 @@
 <h1 align="center">Joe Bot :robot:</h1>
 <p align="center">A general-purpose bot library inspired by Hubot but written in Go.</p>
 <p align="center">
-    <a href="https://joe-bot.net"><img src="https://img.shields.io/badge/website-joe--bot.net-brightgreen"></a>
     <a href="https://github.com/go-joe/joe/releases"><img src="https://img.shields.io/github/tag/go-joe/joe.svg?label=version&color=brightgreen"></a>
     <a href="https://circleci.com/gh/go-joe/joe/tree/master"><img src="https://circleci.com/gh/go-joe/joe/tree/master.svg?style=shield"></a>
     <a href="https://goreportcard.com/report/github.com/go-joe/joe"><img src="https://goreportcard.com/badge/github.com/go-joe/joe"></a>
@@ -26,7 +25,7 @@ go get github.com/go-joe/joe
 
 ### Example usage
 
-**You can find all code examples, more explanation and complete recipes at https://joe-bot.net**
+**You can find all code examples, more explanation and complete recipes in the [documentation](_docs/content)**
 
 Each bot consists of a chat _Adapter_ (e.g. to integrate with Slack), a _Memory_
 implementation to remember key-value data (e.g. using Redis) and a _Brain_ which
